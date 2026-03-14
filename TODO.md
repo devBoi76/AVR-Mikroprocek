@@ -1,5 +1,7 @@
 # Podział Pracy
 
 - [ ] Podstawowe ALU (B. Margas)
-- [ ] Podstawowy Instruction Decode (J. Mrzygłód)
+- [x] Podstawowy Instruction Decode (J. Mrzygłód)
+- [x] Szkielet (J. Mrzygłód)
+- [ ] Program Memory (P. Pasieka)
 
