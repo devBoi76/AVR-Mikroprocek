@@ -4,7 +4,7 @@
 - [x] Podstawowy Instruction Decode (J. Mrzygłód)
 - [x] Szkielet (J. Mrzygłód)
 - [ ] Program Memory (P. Pasieka)
-- [ ] Stos `PUSH`, `POP` (J. Mrzygłód)
+- [x] SRAM i Stos `STS`, `LDS`, `PUSH`, `POP` (J. Mrzygłód)
 
 # Instrukcje do zaimplementowania
 
@@ -39,14 +39,14 @@
 ## Data Transfer
 - [x] `LDI`
 - [ ] `MOV`
-- [ ] `LDS`
+- [x] `LDS`
 - [ ] `LD` (niektóre wersje)
-- [ ] `STS`
+- [x] `STS`
 - [ ] `ST` (niektóre wersje)
 - [ ] `IN`
 - [ ] `OUT`
-- [ ] `PUSH`
-- [ ] `POP`
+- [x] `PUSH`
+- [x] `POP`
 - [ ] `XCH`
 
 ## Bit and Bit-Test Instructions

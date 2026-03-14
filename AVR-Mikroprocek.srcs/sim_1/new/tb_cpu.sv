@@ -23,7 +23,7 @@
 module tb_cpu();
 
     logic clk = 0;
-    cpu cpu (.clk(clk));
+    top top (.clk(clk));
         
     always #5 clk = ~clk;
     

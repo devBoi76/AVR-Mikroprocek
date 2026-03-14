@@ -44,6 +44,14 @@ module decode(
                 opcode = OP_STS;
                 Rd = {inst.rr_rd.d};
             end
+            16'b1001001?????1111: begin
+                opcode = OP_PUSH;
+                Rd = {inst.rr_rd.d};
+            end
+            16'b1001000?????1111: begin
+                opcode = OP_POP;
+                Rd = {inst.rr_rd.d};
+            end
             16'b000011??????????: begin
                 opcode = OP_ADD;
                 Rd = inst.rr_rd.d;

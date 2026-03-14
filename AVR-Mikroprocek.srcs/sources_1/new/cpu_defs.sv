@@ -51,6 +51,8 @@ typedef enum logic [6:0] {
     OP_LDI,
     OP_LDS,
     OP_STS,
+    OP_PUSH,
+    OP_POP,
     OP_ADD,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
