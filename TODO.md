@@ -4,6 +4,7 @@
 - [x] Podstawowy Instruction Decode (J. Mrzygłód)
 - [x] Szkielet (J. Mrzygłód)
 - [ ] Program Memory (P. Pasieka)
+- [ ] Stos `PUSH`, `POP` (J. Mrzygłód)
 
 # Instrukcje do zaimplementowania
 
