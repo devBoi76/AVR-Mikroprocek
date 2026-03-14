@@ -21,7 +21,6 @@
 
 import cpu_defs::*;
 
-// niezaimplementowane
 module decode(
     input inst_t inst,
     output opcode_e opcode,
