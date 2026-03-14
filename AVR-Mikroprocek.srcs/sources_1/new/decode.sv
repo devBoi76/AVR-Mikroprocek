@@ -36,6 +36,14 @@ module decode(
                 Rd = {1'b1, inst.imm.d}; // r16-r31
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
             end
+            16'b1001000?????0000: begin
+                opcode = OP_LDS;
+                Rd = {inst.rr_rd.d};
+            end
+            16'b1001001?????0000: begin
+                opcode = OP_STS;
+                Rd = {inst.rr_rd.d};
+            end
             16'b000011??????????: begin
                 opcode = OP_ADD;
                 Rd = inst.rr_rd.d;

@@ -42,12 +42,15 @@ typedef union packed {
 // TODO: dodaj S_WRITEBACK wykorzystana np. w instrukcjach dot. pamięci RAM
 typedef enum logic [1:0] {
     S_FETCH,
-    S_EXECUTE
+    S_EXECUTE,
+    S_MEMOP
 } cpu_state_e;
 
 // Wewnętrzna reprezentacja poleceń. Nie ma znaczenia ile te wartości wynoszą. 
 typedef enum logic [6:0] {
     OP_LDI,
+    OP_LDS,
+    OP_STS,
     OP_ADD,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
