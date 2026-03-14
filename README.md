@@ -16,5 +16,5 @@
 - https://eclipse.umbc.edu/robucci/cmpe311/
 - https://ww1.microchip.com/downloads/en/devicedoc/AVR-Instruction-Set-Manual-DS40002198A.pdf
 - https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set#Instruction_encoding
-
+- https://fruttenboel.nl/AVR/opcodes.html
 
