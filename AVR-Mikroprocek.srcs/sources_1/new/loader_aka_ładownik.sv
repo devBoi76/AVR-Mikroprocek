@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 03/14/2026 11:38:31 AM
+// Create Date: 15.03.2026 23:27:59
 // Design Name: 
-// Module Name: counter
+// Module Name: loader
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -19,17 +19,18 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module pmem_counter #(parameter BITS = 8) (
-    input  logic clk,
-    input  logic rst,
-    input  logic enable,
-    output logic [BITS-1:0] count = 0
-);
 
-    always_ff @(posedge clk) begin
-        if (rst)
-            count <= 0;
-        else if (enable)
-            count <= count + 1;
-    end
+module loader(
+    logic  input clk,
+    logic  input reset,
+    logic  input load_mode,
+    logic  input [7:0] uart_data,
+    logic  input uart_valid,
+    
+    logic output [15:0] data_out,
+    logic output instr_valid
+
+    );
+    
+    
 endmodule
