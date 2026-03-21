@@ -49,6 +49,11 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     memop_dir_e memop_dir;
     reg_addr_t memop_r;
     
+    //flagi i zmienne do wyliczeń
+    flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
+    data_word_t tmp_rd, tmp_rr, result_alu;
+    //Można dodać sygnał reset_flags do resetowania wszystkich flag
+    
     logic [1:0] pc_inc_amount = 0;
     cpu_state_e state = S_EXECUTE;
     always_ff @(posedge clk) begin // always_ff <=> używamy '<=' nieblokujące
@@ -94,9 +99,59 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_MEMOP;
                     end
                     OP_ADD: begin
-                        r[Rd] <= r[Rd] + r[Rr];
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        {flags.C, result_alu} = r[Rd] + r[Rr];
+                        r[Rd] <= result_alu;
+                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
+                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
                         state <= S_EXECUTE;
                     end
+                    OP_ADC: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        {flags.C, result_alu} = r[Rd] + r[Rr] + flags.C;
+                        r[Rd] <= result_alu;
+                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
+                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
+                        state <= S_EXECUTE;
+                    end
+                    OP_SUB: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        result_alu = r[Rd] - r[Rr];
+                        flags.C = tmp_rr > tmp_rd;
+                        r[Rd] <= result_alu;
+                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
+                        flags.V <= (tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_SBC: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        result_alu = r[Rd] - r[Rr] - flags.C;
+                        flags.C = tmp_rr + flags.C > tmp_rd;
+                        r[Rd] <= result_alu;
+                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
+                        flags.V <= (tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^((tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0) & flags.Z;
+                        state <= S_EXECUTE;
+                     end
                 endcase
             end
             S_MEMOP: begin

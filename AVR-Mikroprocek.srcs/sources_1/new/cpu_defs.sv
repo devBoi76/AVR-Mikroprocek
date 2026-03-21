@@ -47,15 +47,30 @@ typedef enum logic [1:0] {
 } cpu_state_e;
 
 // Wewnętrzna reprezentacja poleceń. Nie ma znaczenia ile te wartości wynoszą. 
-typedef enum logic [6:0] {
+typedef enum logic [9:0] {
     OP_LDI,
     OP_LDS,
     OP_STS,
     OP_PUSH,
     OP_POP,
     OP_ADD,
+    OP_ADC,
+    OP_SUB,
+    OP_SBC,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
+
+//Flagi
+typedef struct packed{
+    logic C; //Carry
+    logic Z; //Zero
+    logic N; //Negative
+    logic V; //Overflow
+    logic S; //For signed tests
+    logic H; //Half carry
+    logic T; //Transfer
+    logic I; //Interrupt
+} flags_t;
 
 endpackage : cpu_defs
 

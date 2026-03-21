@@ -57,6 +57,21 @@ module decode(
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
             end
+            16'b000111??????????: begin
+                opcode = OP_ADC;
+                Rd = inst.rr_rd.d;
+                Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+            end
+            16'b000110??????????: begin
+                opcode = OP_SUB;
+                Rd = inst.rr_rd.d;
+                Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+            end
+            16'b000010??????????: begin
+                opcode = OP_SBC;
+                Rd = inst.rr_rd.d;
+                Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+            end
             default: begin
                 opcode = OP_UNKNOWN;
                 Rd = '0;
