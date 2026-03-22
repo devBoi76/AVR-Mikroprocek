@@ -1,6 +1,6 @@
 # Podział Pracy
 
-- [ ] Podstawowe ALU (B. Margas)
+- [ ] Podstawowe ALU, pozostało wyekstrachować do modułu (B. Margas)
 - [x] Podstawowy Instruction Decode (J. Mrzygłód)
 - [x] Szkielet (J. Mrzygłód)
 - [ ] Program Memory (P. Pasieka)
@@ -13,17 +13,17 @@
 - [x] `ADC`
 - [x] `SUB`
 - [x] `SBC`
-- [ ] `AND`
-- [ ] `ANDI`
-- [ ] `OR`
-- [ ] `ORI`
-- [ ] `EOR`
-- [ ] `INC`
-- [ ] `DEC`
-- [ ] `TST`
-- [ ] `CLR`
-- [ ] `MUL`
-- [ ] `MULS`
+- [x] `AND`
+- [x] `ANDI`
+- [x] `OR`
+- [x] `ORI`
+- [x] `EOR`
+- [x] `INC`
+- [x] `DEC`
+- [x] `TST`
+- [x] `CLR`
+- [x] `MUL`
+- [x] `MULS`
 
 ## Control Flow
 - [ ] `RJMP`
