@@ -10,9 +10,9 @@
 
 ## Arithmetic/Logic
 - [x] `ADD`
-- [ ] `ADC`
-- [ ] `SUB`
-- [ ] `SBC`
+- [x] `ADC`
+- [x] `SUB`
+- [x] `SBC`
 - [ ] `AND`
 - [ ] `ANDI`
 - [ ] `OR`
