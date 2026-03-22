@@ -47,7 +47,7 @@ typedef enum logic [1:0] {
 } cpu_state_e;
 
 // Wewnętrzna reprezentacja poleceń. Nie ma znaczenia ile te wartości wynoszą. 
-typedef enum logic [9:0] {
+typedef enum logic [20:0] {
     OP_LDI,
     OP_LDS,
     OP_STS,
@@ -57,6 +57,17 @@ typedef enum logic [9:0] {
     OP_ADC,
     OP_SUB,
     OP_SBC,
+    OP_AND,
+    OP_ANDI,
+    OP_OR,
+    OP_ORI,
+    OP_EOR,
+    OP_INC,
+    OP_DEC,
+    OP_TST,
+    OP_CLR,
+    OP_MUL,
+    OP_MULS,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
 
