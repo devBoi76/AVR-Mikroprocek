@@ -18,8 +18,8 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+import cpu_defs::*;
 
-// TODO: Switch to cpu_defs::addr_word_t, cpu_defs::inst_word_t
 module pmem_top
     # (
     parameter CLK_FREQ,
@@ -31,9 +31,9 @@ module pmem_top
     input  logic    reset,
     input  logic    load_mode,
     input  logic    uart_rx,
-    input  logic    [7:0] cpu_addr,
+    input  addr_word_t cpu_addr,
     
-    output logic    [15:0] instr_out,
+    output inst_word_t instr_out,
     output logic    frame_error
   
     );
@@ -41,10 +41,10 @@ module pmem_top
     logic [7:0]  uart_data;
     logic        uart_valid;
 
-    logic [15:0] instr_data;
+    inst_word_t  instr_data;
     logic        instr_valid;
 
-    logic [7:0]  load_addr;
+    addr_word_t  load_addr;
     
     pmem_uart #(.CLK_FREQ(CLK_FREQ), .BAUD_RATE(BR)) u_pmem_uart (
         .clk(clk),
@@ -72,7 +72,7 @@ module pmem_top
         .count(load_addr)
     );
     
-    pmem_memory u_pmem_memory (
+    pmem_memory #(.ADDR_BITS(8)) u_pmem_memory (
         .clk(clk),
         .out_reset(reset),
         .mem_reset(reset),
@@ -80,7 +80,7 @@ module pmem_top
         .load_addr(load_addr),
         .rx_data(instr_data),
         .rx_valid(instr_valid),
-        .cpu_addr(cpu_addr),
+        .cpu_addr(cpu_addr), // 
         .instr_out(instr_out)
     );
 

@@ -18,23 +18,22 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+import cpu_defs::BITS_INST;
 
 module pmem_memory #(
-    parameter BITS = 8, 
-    parameter INSTR = 16
-)(
-    input  logic clk,                       // zegar
-    input  logic out_reset,                 // reset wyjścia
-    input  logic mem_reset,                 // całkowity reset pamięci mem
-    input  logic load_mode,                 // ładowanie programu (1) czy nie (0)
-    input  logic [BITS-1:0] load_addr,      // adres z countera
-    input  logic [INSTR-1:0] rx_data,       // dane do zapisania
-    input  logic rx_valid,                  // dane poprawne i gotowe do zapisu
-    input  logic [BITS-1:0] cpu_addr,       // adres odczytu procesora
-    output logic [INSTR-1:0] instr_out      // instrukcja wyjściowa 
+    parameter ADDR_BITS
+) (
+    input  logic clk,
+    input  logic out_reset,                     // reset wyjścia
+    input  logic mem_reset,                     // całkowity reset pamięci mem
+    input  logic load_mode,                     // ładowanie programu (1) czy nie (0)
+    input  logic [ADDR_BITS-1:0] load_addr,     // adres z countera
+    input  logic [BITS_INST-1:0] rx_data,       // dane do zapisania
+    input  logic rx_valid,                      // dane poprawne i gotowe do zapisu
+    input  logic [ADDR_BITS-1:0] cpu_addr,      // adres odczytu procesora
+    output logic [BITS_INST-1:0] instr_out      // instrukcja wyjściowa 
 );
-    
-    logic [INSTR-1:0] mem [0:(2**BITS)-1];  // pamięć
+    logic [BITS_INST-1:0] mem [0:(2**ADDR_BITS)-1];
     integer i;
 
 // mem_reset (1) - reset pamięci wraz z wyjściem
@@ -45,7 +44,7 @@ module pmem_memory #(
 
     always_ff @(posedge clk) begin
         if (mem_reset) begin
-            for (i = 0; i < (2**BITS); i = i + 1) begin
+            for (i = 0; i < (2**ADDR_BITS); i = i + 1) begin
                 mem[i] <= 0;
             end
             instr_out <= 0;

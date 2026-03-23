@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+import cpu_defs::addr_word_t;
+
 module pmem_loader(
     input  logic clk,
     input  logic reset,
@@ -7,7 +9,7 @@ module pmem_loader(
     input  logic [7:0] uart_data,   // dane z uarta
     input  logic uart_valid,        // potwierdzenie o poprawności danych wysłane przez uart
     
-    output logic [15:0] data_out,   // dane wyjściowe
+    output addr_word_t data_out,   // dane wyjściowe
     output logic instr_valid        // zatwierdzenie instrukcji 
 );
 
