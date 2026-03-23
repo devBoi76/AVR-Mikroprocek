@@ -49,6 +49,11 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     memop_dir_e memop_dir;
     reg_addr_t memop_r;
     
+    //flagi i zmienne do wyliczeń
+    flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
+    data_word_t tmp_rd, tmp_rr, result_alu, result_mul_MSB, result_mul_LSB;
+    //Można dodać sygnał reset_flags do resetowania wszystkich flag
+    
     logic [1:0] pc_inc_amount = 0;
     cpu_state_e state = S_EXECUTE;
     always_ff @(posedge clk) begin // always_ff <=> używamy '<=' nieblokujące
@@ -94,9 +99,164 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_MEMOP;
                     end
                     OP_ADD: begin
-                        r[Rd] <= r[Rd] + r[Rr];
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        {flags.C, result_alu} = r[Rd] + r[Rr];
+                        r[Rd] <= result_alu;
+                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
+                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
                         state <= S_EXECUTE;
                     end
+                    OP_ADC: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        {flags.C, result_alu} = r[Rd] + r[Rr] + flags.C;
+                        r[Rd] <= result_alu;
+                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
+                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
+                        state <= S_EXECUTE;
+                    end
+                    OP_SUB: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        result_alu = r[Rd] - r[Rr];
+                        flags.C = tmp_rr > tmp_rd;
+                        r[Rd] <= result_alu;
+                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
+                        flags.V <= (tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_SBC: begin
+                        pc_inc_amount <= 1;
+                        tmp_rd = r[Rd];
+                        tmp_rr = r[Rr];
+                        result_alu = r[Rd] - r[Rr] - flags.C;
+                        flags.C = tmp_rr + flags.C > tmp_rd;
+                        r[Rd] <= result_alu;
+                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
+                        flags.V <= (tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
+                        flags.N <= result_alu[7];
+                        flags.S <= result_alu[7] ^((tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
+                        flags.Z <= (result_alu == 0) & flags.Z;
+                        state <= S_EXECUTE;
+                     end
+                     OP_AND: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] & r[Rr];
+                        r[Rd] <= result_alu;
+                        flags.V = 0;
+                        flags.N = result_alu[7];
+                        flags.S = 0 ^ result_alu[7];
+                        flags.Z = (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_ANDI: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] & K;
+                        r[Rd] <= result_alu;
+                        flags.V = 0;
+                        flags.N = result_alu[7];
+                        flags.S = 0 ^ result_alu[7];
+                        flags.Z = (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_OR: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] | r[Rr];
+                        r[Rd] <= result_alu;
+                        flags.V = 0;
+                        flags.N = result_alu[7];
+                        flags.Z = (result_alu == 0);
+                        flags.S = 0 ^ result_alu[7];
+                        state <= S_EXECUTE;
+                     end
+                     OP_ORI: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] | K;
+                        r[Rd] <= result_alu;
+                        flags.V = 0;
+                        flags.N = result_alu[7];
+                        flags.Z = (result_alu == 0);
+                        flags.S = 0 ^ result_alu[7];
+                        state <= S_EXECUTE;
+                     end
+                     OP_EOR: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] ^ r[Rr];
+                        r[Rd] <= result_alu;
+                        flags.V = 0;
+                        flags.N = result_alu[7];
+                        flags.Z = (result_alu == 0);
+                        flags.S = 0 ^ result_alu[7];
+                        state <= S_EXECUTE;
+                     end
+                     OP_INC: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] + 1;
+                        r[Rd] <= result_alu;
+                        flags.V = (result_alu == 128);
+                        flags.N = result_alu[7];
+                        flags.S = (result_alu[7]) ^ (result_alu == 128);
+                        flags.Z = (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_DEC: begin
+                        pc_inc_amount <= 1;
+                        result_alu = r[Rd] - 1;
+                        r[Rd] <= result_alu;
+                        flags.V = (result_alu == 127);
+                        flags.N = result_alu[7];
+                        flags.S = (result_alu[7]) ^ (result_alu == 127);
+                        flags.Z = (result_alu == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_TST: begin
+                        pc_inc_amount <= 1;
+                        flags.V = 0;
+                        flags.N = r[Rd][7];
+                        flags.S = 0 ^ r[Rd][7];
+                        flags.Z = (r[Rd] == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLR: begin
+                        pc_inc_amount <= 1;
+                        flags.S = 0;
+                        flags.V = 0;
+                        flags.N = 0;
+                        flags.Z = 1;
+                        r[Rd] = r[Rd] ^ r[Rd];
+                        state <= S_EXECUTE;
+                     end
+                     OP_MUL: begin
+                        pc_inc_amount <= 1;
+                        {result_mul_MSB, result_mul_LSB} = r[Rd] * r[Rr];
+                        r[1] <= result_mul_MSB;
+                        r[0] <= result_mul_LSB;
+                        flags.C = result_mul_MSB[7];
+                        flags.Z = (result_mul_MSB == 0 & result_mul_LSB == 0);
+                        state <= S_EXECUTE;
+                     end
+                     OP_MULS: begin
+                        pc_inc_amount <= 1;
+                        {result_mul_MSB, result_mul_LSB} = $signed(r[Rd]) * $signed(r[Rr]);
+                        r[1] <= result_mul_MSB;
+                        r[0] <= result_mul_LSB;
+                        flags.C = result_mul_MSB[7];
+                        flags.Z = (result_mul_MSB == 0 & result_mul_LSB == 0);
+                        state <= S_EXECUTE;
+                     end
                 endcase
             end
             S_MEMOP: begin
