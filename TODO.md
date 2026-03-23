@@ -3,7 +3,7 @@
 - [ ] Podstawowe ALU (B. Margas)
 - [x] Podstawowy Instruction Decode (J. Mrzygłód)
 - [x] Szkielet (J. Mrzygłód)
-- [ ] Program Memory (P. Pasieka)
+- [x] Program Memory (P. Pasieka)
 - [x] SRAM i Stos `STS`, `LDS`, `PUSH`, `POP` (J. Mrzygłód)
 
 # Instrukcje do zaimplementowania

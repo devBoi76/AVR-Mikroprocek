@@ -2,7 +2,7 @@
 
 module tb_pmem_top;
 
-    parameter CLK_FREQ     = 100_000_000;
+    parameter CLK_FREQ     = 1_000_000;
     parameter BAUD_RATE    = 115200;
     parameter CLKS_PER_BIT = CLK_FREQ / BAUD_RATE;
 
@@ -14,7 +14,7 @@ module tb_pmem_top;
     logic [15:0] instr_out;
     logic frame_error;
 
-    pmem_top dut (
+    pmem_top #(.CLK_FREQ(CLK_FREQ)) dut (
         .clk(clk),
         .reset(reset),
         .load_mode(load_mode),

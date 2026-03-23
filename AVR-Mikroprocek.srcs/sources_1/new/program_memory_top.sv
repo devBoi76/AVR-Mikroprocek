@@ -19,8 +19,13 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-
-module pmem_top(
+// TODO: Switch to cpu_defs::addr_word_t, cpu_defs::inst_word_t
+module pmem_top
+    # (
+    parameter CLK_FREQ,
+    parameter BR
+    )
+    (
 
     input  logic    clk,
     input  logic    reset,
@@ -41,7 +46,7 @@ module pmem_top(
 
     logic [7:0]  load_addr;
     
-    pmem_uart u_pmem_uart (
+    pmem_uart #(.CLK_FREQ(CLK_FREQ), .BAUD_RATE(BR)) u_pmem_uart (
         .clk(clk),
         .reset(reset),
         .uart_rx(uart_rx),

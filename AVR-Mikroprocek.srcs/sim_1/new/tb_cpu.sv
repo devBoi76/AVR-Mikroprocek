@@ -22,12 +22,82 @@
 
 module tb_cpu();
 
-    logic clk = 0;
-    top top (.clk(clk));
-        
-    always #5 clk = ~clk;
-    
+    typedef logic [15:0] inst_word_t;
+
+    inst_word_t prog[15:0];
+
     initial begin
-        #200 $finish;
+        prog[0] = 16'b1110_0000_0000_1010; // LDI r16, 10
+        prog[1] = 16'b1110_0001_0001_0100; // LDI r17, 20
+        prog[2] = 16'b000011_11_0000_0001; // ADD r16, r17
+        prog[3] = 16'b1001001_10000_0000;  // STS r16
+        prog[4] = 16'b0000_0000_1000_0000; // ADDR = 128
+        prog[5] = 16'b1001000_10010_0000;  // LDS r18
+        prog[6] = 16'b0000_0000_1000_0000; // ADDR = 128
+        prog[7] = 16'b1001001_10000_1111;  // PUSH r16
+        prog[8] = 16'b1001000_00000_1111;  // POP r0
     end
+
+    logic uart_rx = 1;
+    logic load_mode = 0;
+    logic uart_reset = 1;
+    logic clk = 0;
+
+    parameter UART_CLK_FREQ     = 500;//100_000_000;
+    parameter BAUD_RATE    = 100;
+    parameter CLKS_PER_BIT = UART_CLK_FREQ / BAUD_RATE;
+    
+    top #(.UART_CLK_FREQ(UART_CLK_FREQ), .UART_BR(BAUD_RATE)) top (
+        .clk(clk),
+        .uart_rx(uart_rx),
+        .load_mode(load_mode),
+        .uart_reset(uart_reset)
+    );
+
+    always #5 clk = ~clk;
+
+
+    
+    task uart_send_byte(input [7:0] data);
+        integer i;
+        begin
+            uart_rx = 0;
+            repeat (CLKS_PER_BIT) @(posedge clk);
+
+            for (i = 0; i < 8; i = i + 1) begin
+                uart_rx = data[i];
+                repeat (CLKS_PER_BIT) @(posedge clk);
+            end
+
+            uart_rx = 1;
+            repeat (CLKS_PER_BIT) @(posedge clk);
+        end
+    endtask
+    
+    task uart_send_inst(input inst_word_t inst);
+        begin
+            uart_send_byte(inst[7:0]); // low byte
+            uart_send_byte(inst[15:8]); // high byte
+        end
+    endtask
+
+    integer i;
+
+    initial begin
+        repeat (10) @(posedge clk);
+        load_mode = 1;
+        uart_reset = 0;
+        #20;
+        
+        
+        for (i = 0; i < 9; i++) begin
+            uart_send_inst(prog[i]);
+        end
+        
+        repeat (20) @(posedge clk);
+        load_mode = 0;
+        
+        #1000 $finish;
+    end
+
 endmodule

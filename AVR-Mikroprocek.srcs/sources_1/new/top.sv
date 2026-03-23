@@ -20,23 +20,15 @@
 //////////////////////////////////////////////////////////////////////////////////
 import cpu_defs::*;
 
-module top(input logic clk);
+module top #(parameter UART_CLK_FREQ, parameter UART_BR) (input logic clk, input logic uart_rx, input logic load_mode, input logic uart_reset);
     
-    inst_word_t prog[15:0];
-    initial begin
-        prog[0] = 16'b1110_0000_0000_1010; // LDI r16, 10
-        prog[1] = 16'b1110_0001_0001_0100; // LDI r17, 20
-        prog[2] = 16'b000011_11_0000_0001; // ADD r16, r17
-        prog[3] = 16'b1001001_10000_0000; // STS r16
-        prog[4] = 16'b0000_0000_1000_0000; // ADDR = 128
-        prog[5] = 16'b1001000_10010_0000; // LDS r18
-        prog[6] = 16'b0000_0000_1000_0000; // ADDR = 128
-        prog[7] = 16'b1001001_10000_1111; // PUSH r16
-        prog[8] = 16'b1001000_00000_1111; // POP r0
-    end
     addr_word_t prog_addr;
     inst_word_t prog_data;
-    assign prog_data = prog[prog_addr];
+    logic frame_error;
     
-    cpu cpu (.clk(clk), .prog_addr(prog_addr), .prog_data(prog_data));
+    pmem_top #(.CLK_FREQ(UART_CLK_FREQ), .BR(UART_BR)) pmem (
+    .clk(clk), .reset(uart_reset), .load_mode(load_mode), .uart_rx(uart_rx),
+    .cpu_addr(prog_addr), .instr_out(prog_data), .frame_error(frame_error));
+    
+    cpu cpu (.clk(clk & (load_mode == 0)), .prog_addr(prog_addr), .prog_data(prog_data));
 endmodule

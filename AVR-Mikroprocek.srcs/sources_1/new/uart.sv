@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module pmem_uart #(
-    parameter CLK_FREQ  = 100_000_000,   // częstotliwość zegara FPGA
+    parameter CLK_FREQ,   // częstotliwość zegara FPGA
     parameter BAUD_RATE = 115200         // prędkość UART
 )(
     input  logic clk,
