@@ -65,14 +65,15 @@ module pmem_top
         .instr_valid(instr_valid)
     );
     
-    pmem_counter u_pmem_counter (
+    localparam ADDR_BITS = 8;
+    pmem_counter #(.BITS(ADDR_BITS)) u_pmem_counter (
         .clk(clk),
         .rst(reset),
         .enable(instr_valid),
         .count(load_addr)
     );
     
-    pmem_memory #(.ADDR_BITS(8)) u_pmem_memory (
+    pmem_memory #(.ADDR_BITS(ADDR_BITS)) u_pmem_memory (
         .clk(clk),
         .out_reset(reset),
         .mem_reset(reset),

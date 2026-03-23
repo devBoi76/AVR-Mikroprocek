@@ -19,7 +19,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module pmem_counter #(parameter BITS = 8) (
+module pmem_counter #(parameter BITS) (
     input  logic clk,
     input  logic rst,
     input  logic enable,
