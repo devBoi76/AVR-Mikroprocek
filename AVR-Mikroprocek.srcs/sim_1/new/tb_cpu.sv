@@ -24,8 +24,9 @@ module tb_cpu();
 
     typedef logic [15:0] inst_word_t;
 
-    inst_word_t prog[15:0];
-
+    localparam PROG_SIZE = 32;
+    inst_word_t prog[PROG_SIZE:0];
+    
     initial begin
         prog[0] = 16'b1110_0000_0000_1010; // LDI r16, 10
         prog[1] = 16'b1110_0001_0001_0100; // LDI r17, 20
@@ -42,6 +43,9 @@ module tb_cpu();
         prog[12] = 16'b0000_0000_1000_0000; // ADDR = 128
         prog[13] = 16'b1001001_10000_1111; // PUSH r16
         prog[14] = 16'b1001000_00000_1111; // POP r0
+        prog[15]  = 16'b001011_1_10011_0010; // MOV r19, r18
+        prog[16] = 16'b10111_00_10011_0101; // OUT 5, r19
+        prog[17] = 16'b10110_00_10100_0101; // IN r20, 5
     end
 
     logic uart_rx = 1;
@@ -96,7 +100,7 @@ module tb_cpu();
         #20;
         
         
-        for (i = 0; i < 15; i++) begin
+        for (i = 0; i < PROG_SIZE; i++) begin
             uart_send_inst(prog[i]);
         end
         

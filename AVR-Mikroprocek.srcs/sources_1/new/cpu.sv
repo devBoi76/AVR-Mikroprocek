@@ -34,6 +34,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
 
     data_word_t r[31:0];
     localparam int SRAM_MAX_ADDR = 'h1FFF; // 8KB
+    localparam int IO_BASE = 16'h0020; //32
     data_word_t sram[SRAM_MAX_ADDR:0];
     assign sram[31:0] = r[31:0];
     addr_word_t sp = SRAM_MAX_ADDR; // stack pointer
@@ -43,7 +44,8 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     reg_addr_t Rd;
     reg_addr_t Rr;
     data_word_t K;
-    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K));
+    addr_io_word_t A;
+    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .A(A));
     
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
@@ -257,6 +259,21 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         flags.Z = (result_mul_MSB == 0 & result_mul_LSB == 0);
                         state <= S_EXECUTE;
                      end
+                     OP_IN: begin
+                         pc_inc_amount <= 1;
+                         r[Rd] <= sram[IO_BASE + A];
+                         state <= S_EXECUTE;
+                     end
+                     OP_OUT: begin
+                         pc_inc_amount <= 1;
+                         sram[IO_BASE + A] <= r[Rr];
+                         state <= S_EXECUTE;
+                     end
+                     OP_MOV: begin
+                         pc_inc_amount <= 1;
+                         r[Rd] <= r[Rr];
+                         state <= S_EXECUTE;
+                     end 
                 endcase
             end
             S_MEMOP: begin
