@@ -26,10 +26,16 @@ module decode(
     output opcode_e opcode,
     output reg_addr_t Rd,
     output reg_addr_t Rr,
-    output data_word_t K
+    output data_word_t K,
+    output addr_io_word_t A
     );
     
     always_comb begin
+        opcode = OP_UNKNOWN;
+        Rd = '0;
+        Rr = '0;
+        K = '0;
+        A = '0;
         casez (inst.raw)
             16'b1110????????????: begin 
                 opcode = OP_LDI;
@@ -57,11 +63,27 @@ module decode(
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
             end
+            16'b001011??????????: begin
+                opcode = OP_MOV;
+                Rd = inst.rr_rd.d;
+                Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+            end            
+            16'b10110???????????: begin
+                opcode = OP_IN;
+                Rd = inst.io.d;
+                A = {inst.io.A_top_bits, inst.io.A_btm_bits };
+            end
+            16'b10111???????????: begin
+                opcode = OP_OUT;
+                Rr = inst.io.d;
+                A = {inst.io.A_top_bits, inst.io.A_btm_bits };
+            end
             default: begin
                 opcode = OP_UNKNOWN;
                 Rd = '0;
                 Rr = '0;
                 K = '0;
+                A = '0;
             end
         endcase
     end

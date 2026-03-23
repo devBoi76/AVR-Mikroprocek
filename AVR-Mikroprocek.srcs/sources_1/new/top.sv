@@ -33,6 +33,9 @@ module top(input logic clk);
         prog[6] = 16'b0000_0000_1000_0000; // ADDR = 128
         prog[7] = 16'b1001001_10000_1111; // PUSH r16
         prog[8] = 16'b1001000_00000_1111; // POP r0
+        prog[9]  = 16'b0010_1110_0110_0010; // MOV r19, r18
+        prog[10] = 16'b1011_1001_0011_0101; // OUT 5, r19
+        prog[11] = 16'b1011_0001_0100_0101; // IN r20, 5
     end
     addr_word_t prog_addr;
     inst_word_t prog_data;
