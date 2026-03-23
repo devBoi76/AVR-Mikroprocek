@@ -38,13 +38,13 @@
 
 ## Data Transfer
 - [x] `LDI`
-- [ ] `MOV`
+- [x] `MOV`
 - [x] `LDS`
 - [ ] `LD` (niektóre wersje)
 - [x] `STS`
 - [ ] `ST` (niektóre wersje)
-- [ ] `IN`
-- [ ] `OUT`
+- [x] `IN`
+- [x] `OUT`
 - [x] `PUSH`
 - [x] `POP`
 - [ ] `XCH`
