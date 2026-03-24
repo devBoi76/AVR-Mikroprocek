@@ -274,7 +274,21 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         // big_K ma 12 bitów, a pc ma 16 bitów. Trzeba castować, bo jedynki nie są powielane w przypatku ujemnej liczby.
                         pc <= pc + addr_word_t'(signed'(big_K)) + 1;
                         state <= S_EXECUTE;
-                     end 
+                     end
+                     OP_BRNE: begin
+                        if (flags.Z == 0)
+                            pc <=  pc + addr_word_t'(signed'(big_K)) + 1;
+                        else
+                            pc <= pc + 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_BREQ: begin
+                        if (flags.Z == 1)
+                            pc <=  pc + addr_word_t'(signed'(big_K)) + 1;
+                        else
+                            pc <= pc + 1;
+                        state <= S_EXECUTE;
+                     end
                 endcase
             end
             S_MEMOP: begin

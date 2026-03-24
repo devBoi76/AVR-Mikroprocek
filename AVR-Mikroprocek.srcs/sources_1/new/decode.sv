@@ -143,6 +143,14 @@ module decode(
                 opcode = OP_RJMP;
                 big_K = inst.rjmp.K;
             end
+            16'b111101???????001: begin
+                opcode = OP_BRNE;
+                big_K = inst.br.K;
+            end
+            16'b111100???????001: begin
+                opcode = OP_BREQ;
+                big_K = inst.br.K;
+            end
             default: begin
                 opcode = OP_UNKNOWN;
                 Rd = '0;

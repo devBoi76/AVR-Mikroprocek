@@ -36,8 +36,8 @@
 - [ ] `RET`
 - [ ] `CP`
 - [ ] `CPI`
-- [ ] `BREQ`
-- [ ] `BRNE`
+- [x] `BREQ`
+- [x] `BRNE`
 
 ## Data Transfer
 - [x] `LDI`

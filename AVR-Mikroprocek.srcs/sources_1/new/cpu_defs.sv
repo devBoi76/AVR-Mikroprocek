@@ -21,7 +21,7 @@ typedef logic [4:0] reg_addr_t;
 // two operands rd, rr, np. wykorzystana w ADD, MOV
 typedef struct packed {
     logic [5:0] op; 
-    logic r_top_bit; 
+    logic r_top_bit;
     logic [4:0] d;
     logic [3:0] r_btm_bits;
 } inst_rr_rd_t;
@@ -49,12 +49,20 @@ typedef struct packed {
     logic signed [11:0] K;
 } inst_rjmp_t;
 
+// BRNE, BREQ, itd.
+typedef struct packed {
+    logic [5:0] op;
+    logic signed [6:0] K;
+    logic [2:0] extra_bits;
+} inst_br_t;
+
 typedef union packed {
     inst_word_t raw;
     inst_rr_rd_t rr_rd;
     inst_imm_t imm;
     inst_io_t io;
     inst_rjmp_t rjmp;
+    inst_br_t br;
 } inst_t;
 
 
@@ -91,6 +99,8 @@ typedef enum logic [20:0] {
     OP_OUT,
     OP_MOV,
     OP_RJMP,
+    OP_BREQ,
+    OP_BRNE,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
 
