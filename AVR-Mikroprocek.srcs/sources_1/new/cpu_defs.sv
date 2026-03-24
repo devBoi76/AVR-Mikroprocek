@@ -43,11 +43,18 @@ typedef struct packed {
     logic [3:0] A_btm_bits;
 } inst_io_t;
 
+// RJMP, RCALL
+typedef struct packed {
+    logic [3:0] op;
+    logic signed [11:0] K;
+} inst_rjmp_t;
+
 typedef union packed {
     inst_word_t raw;
     inst_rr_rd_t rr_rd;
     inst_imm_t imm;
     inst_io_t io;
+    inst_rjmp_t rjmp;
 } inst_t;
 
 
@@ -83,6 +90,7 @@ typedef enum logic [20:0] {
     OP_IN,
     OP_OUT,
     OP_MOV,
+    OP_RJMP,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
 

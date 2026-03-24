@@ -20,11 +20,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 import cpu_defs::*;
 
-typedef enum logic [1:0] {
+typedef enum logic [2:0] {
     MEM_READ_PC,
     MEM_POP_SP,
     MEM_WRITE_PC,
-    MEM_PUSH_SP
+    MEM_FETCH_WAIT
 } memop_dir_e;
 
 module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data);    
@@ -44,8 +44,9 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     reg_addr_t Rd;
     reg_addr_t Rr;
     data_word_t K;
+    logic signed [11:0] big_K;
     addr_io_word_t A;
-    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .A(A));
+    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A));
     
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
@@ -56,13 +57,9 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     data_word_t tmp_rd, tmp_rr, result_alu, result_mul_MSB, result_mul_LSB;
     //Można dodać sygnał reset_flags do resetowania wszystkich flag
     
-    logic [1:0] pc_inc_amount = 0;
+    
     cpu_state_e state = S_EXECUTE;
-    always_ff @(posedge clk) begin // always_ff <=> używamy '<=' nieblokujące
-        if (pc_inc_amount > 0) begin
-            pc <= pc + 1;
-            pc_inc_amount <= pc_inc_amount - 1; 
-        end
+    always_ff @(negedge clk) begin // always_ff <=> używamy '<=' nieblokujące
         case (state)
             S_EXECUTE: begin
                 // W przyszłości lepiej rozbudować to w ten sposób:
@@ -72,36 +69,35 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                 case (opcode)
                     OP_LDI: begin
                         r[Rd] <= K;
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         state <= S_EXECUTE;
                     end
                     OP_LDS: begin
-                        pc_inc_amount <= 2;
+                        pc <= pc + 1;
                         memop_r <= Rd;
                         memop_dir <= MEM_READ_PC;  
                         state <= S_MEMOP;
                     end
                     OP_STS: begin
-                        pc_inc_amount <= 2;
+                        pc <= pc + 1;
                         memop_r <= Rd;
                         memop_dir <= MEM_WRITE_PC;
                         state <= S_MEMOP;
                     end
                     OP_PUSH: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         sram[sp] <= r[Rd];
-                        memop_dir <= MEM_PUSH_SP;
-                        state <= S_MEMOP;
+                        sp <= sp - 1;
+                        state <= S_EXECUTE;
                     end
                     OP_POP: begin
-                        pc_inc_amount <= 1;
                         sp <= sp + 1;
                         memop_r <= Rd;
                         memop_dir <= MEM_POP_SP;
                         state <= S_MEMOP;
                     end
                     OP_ADD: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         tmp_rd = r[Rd];
                         tmp_rr = r[Rr];
                         {flags.C, result_alu} = r[Rd] + r[Rr];
@@ -114,7 +110,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                     end
                     OP_ADC: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         tmp_rd = r[Rd];
                         tmp_rr = r[Rr];
                         {flags.C, result_alu} = r[Rd] + r[Rr] + flags.C;
@@ -127,7 +123,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                     end
                     OP_SUB: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         tmp_rd = r[Rd];
                         tmp_rr = r[Rr];
                         result_alu = r[Rd] - r[Rr];
@@ -141,7 +137,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_SBC: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         tmp_rd = r[Rd];
                         tmp_rr = r[Rr];
                         result_alu = r[Rd] - r[Rr] - flags.C;
@@ -155,7 +151,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_AND: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] & r[Rr];
                         r[Rd] <= result_alu;
                         flags.V = 0;
@@ -165,7 +161,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_ANDI: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] & K;
                         r[Rd] <= result_alu;
                         flags.V = 0;
@@ -175,7 +171,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_OR: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] | r[Rr];
                         r[Rd] <= result_alu;
                         flags.V = 0;
@@ -185,7 +181,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_ORI: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] | K;
                         r[Rd] <= result_alu;
                         flags.V = 0;
@@ -195,7 +191,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_EOR: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] ^ r[Rr];
                         r[Rd] <= result_alu;
                         flags.V = 0;
@@ -205,7 +201,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_INC: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] + 1;
                         r[Rd] <= result_alu;
                         flags.V = (result_alu == 128);
@@ -215,7 +211,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_DEC: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         result_alu = r[Rd] - 1;
                         r[Rd] <= result_alu;
                         flags.V = (result_alu == 127);
@@ -225,7 +221,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_TST: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         flags.V = 0;
                         flags.N = r[Rd][7];
                         flags.S = 0 ^ r[Rd][7];
@@ -233,7 +229,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_CLR: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         flags.S = 0;
                         flags.V = 0;
                         flags.N = 0;
@@ -242,7 +238,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_MUL: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         {result_mul_MSB, result_mul_LSB} = r[Rd] * r[Rr];
                         r[1] <= result_mul_MSB;
                         r[0] <= result_mul_LSB;
@@ -251,7 +247,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_MULS: begin
-                        pc_inc_amount <= 1;
+                        pc <= pc + 1;
                         {result_mul_MSB, result_mul_LSB} = $signed(r[Rd]) * $signed(r[Rr]);
                         r[1] <= result_mul_MSB;
                         r[0] <= result_mul_LSB;
@@ -260,38 +256,45 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         state <= S_EXECUTE;
                      end
                      OP_IN: begin
-                         pc_inc_amount <= 1;
-                         r[Rd] <= sram[IO_BASE + A];
-                         state <= S_EXECUTE;
+                        pc <= pc + 1;
+                        r[Rd] <= sram[IO_BASE + A];
+                        state <= S_EXECUTE;
                      end
                      OP_OUT: begin
-                         pc_inc_amount <= 1;
-                         sram[IO_BASE + A] <= r[Rr];
-                         state <= S_EXECUTE;
+                        pc <= pc + 1;
+                        sram[IO_BASE + A] <= r[Rr];
+                        state <= S_EXECUTE;
                      end
                      OP_MOV: begin
-                         pc_inc_amount <= 1;
-                         r[Rd] <= r[Rr];
-                         state <= S_EXECUTE;
+                        pc <= pc + 1;
+                        r[Rd] <= r[Rr];
+                        state <= S_EXECUTE;
+                     end
+                     OP_RJMP: begin
+                        // big_K ma 12 bitów, a pc ma 16 bitów. Trzeba castować, bo jedynki nie są powielane w przypatku ujemnej liczby.
+                        pc <= pc + addr_word_t'(signed'(big_K)) + 1;
+                        state <= S_EXECUTE;
                      end 
                 endcase
             end
             S_MEMOP: begin
                 case (memop_dir)
                     MEM_READ_PC: begin
+                        pc <= pc + 1;
                         r[memop_r] <= sram[prog_data];
                         state <= S_EXECUTE;
                     end
                     MEM_WRITE_PC: begin
+                        pc <= pc + 1;
                         sram[prog_data] <= r[memop_r];
                         state <= S_EXECUTE;
                     end
                     MEM_POP_SP: begin
+                        pc <= pc + 1;
                         r[memop_r] <= sram[sp];
                         state <= S_EXECUTE;
                     end
-                    MEM_PUSH_SP: begin
-                        sp <= sp - 1;
+                    MEM_FETCH_WAIT: begin
                         state <= S_EXECUTE;
                     end
                 endcase

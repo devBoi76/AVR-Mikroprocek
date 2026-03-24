@@ -26,7 +26,7 @@
 - [x] `MULS`
 
 ## Control Flow
-- [ ] `RJMP`
+- [x] `RJMP`
 - [ ] `JMP`
 - [ ] `RCALL`
 - [ ] `CALL`

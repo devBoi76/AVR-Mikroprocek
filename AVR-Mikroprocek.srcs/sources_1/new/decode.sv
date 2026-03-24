@@ -27,15 +27,11 @@ module decode(
     output reg_addr_t Rd,
     output reg_addr_t Rr,
     output data_word_t K,
+    output logic signed [11:0] big_K, // używane np. w RJMP, RCALl
     output addr_io_word_t A
     );
     
     always_comb begin
-        opcode = OP_UNKNOWN;
-        Rd = '0;
-        Rr = '0;
-        K = '0;
-        A = '0;
         casez (inst.raw)
             16'b1110????????????: begin 
                 opcode = OP_LDI;
@@ -142,6 +138,10 @@ module decode(
                 opcode = OP_OUT;
                 Rr = inst.io.d;
                 A = {inst.io.A_top_bits, inst.io.A_btm_bits };
+            end
+            16'b1100????????????: begin
+                opcode = OP_RJMP;
+                big_K = inst.rjmp.K;
             end
             default: begin
                 opcode = OP_UNKNOWN;
