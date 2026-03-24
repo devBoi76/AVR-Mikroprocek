@@ -1,10 +1,13 @@
 # Podział Pracy
 
-- [ ] Podstawowe ALU, pozostało wyekstrachować do modułu (B. Margas)
+- [x] Instrukcje ALU (B. Margas)
+- [ ] wyekstrachować ALU do modułu (B. Margas)
 - [x] Podstawowy Instruction Decode (J. Mrzygłód)
 - [x] Szkielet (J. Mrzygłód)
 - [x] Program Memory (P. Pasieka)
+- [x] ładowanie po UART (P. Pasieka)
 - [x] SRAM i Stos `STS`, `LDS`, `PUSH`, `POP` (J. Mrzygłód)
+- [x] `IN`, `OUT`, `MOV` (P. Pasieka)
 
 # Instrukcje do zaimplementowania
 
