@@ -1,7 +1,14 @@
+// Działanie:
+// IDLE - czeka na start bit (0) ? przechodzi do START : czeka dalej 
+// START - czeka HALF_BIT_TIME i jeszcze raz sprawdza czy dalej jest start bit ? przechodzi do DATA : wraca do IDLE
+// DATA - co CLKS_PER_BIT taktów odczytuje kolejny bit i wpisuje go do poczekalnie rx_shift aż będzie 8 bitów, potem przechodzi do STOP
+// STOP - sprawdza czy pojawia się stop bit (1) ? wysyła data valid (1) i przerzuca rx_shift do data_out : zwraca frame_error (1) i wraca do IDLE
+
 `timescale 1ns / 1ps
 
 module pmem_uart #(
-    parameter CLK_FREQ,   // częstotliwość zegara FPGA
+    // Moduł musi wiedzieć ile taktów zegara FPGA trwa 1 bit UART, inaczej się rozjedzie 
+    parameter CLK_FREQ,                 // częstotliwość zegara FPGA
     parameter BAUD_RATE = 115200         // prędkość UART
 )(
     input  logic clk,

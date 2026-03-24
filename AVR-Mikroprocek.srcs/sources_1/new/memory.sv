@@ -36,11 +36,12 @@ module pmem_memory #(
     logic [BITS_INST-1:0] mem [0:(2**ADDR_BITS)-1];
     integer i;
 
-// mem_reset (1) - reset pamięci wraz z wyjściem
-// out_reset (1) - reset samego wyjścia
-// load_mode (1) i rx_valid (1) - zapis danych do pamięci
-// load_mode (0) - przekazania wskazanej instrukcji do dekodera 
-
+// Działanie:
+// mem_reset - zeruje całą pamięć mem oraz wyjście instr_out
+// out_reset - zeruje tylko wyjście instr_out
+// load_mode = 1 i rx_valid = 1 - zapisuje rx_data do pamięci pod adres load_addr
+// load_mode = 0 - odczytuje z pamięci instrukcję spod cpu_addr i wystawia ją na instr_out
+// load_mode = 1 - blokuje normalne wyjście do CPU i ustawia instr_out na 0
 
     always_ff @(posedge clk) begin
         if (mem_reset) begin

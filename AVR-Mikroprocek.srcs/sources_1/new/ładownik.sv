@@ -1,5 +1,11 @@
 `timescale 1ns / 1ps
 
+//Działanie:
+// IDLE - czeka aż load_mode = 1 i uart_valid = 1 ? przechodzi do LOAD_FIRST : czeka
+// LOAD_FIRST - zapisuje pierwszy bajt z UART do first_byte i przechodzi do LOAD_SECOND
+// LOAD_SECOND - czeka na drugi bajt i skleja z nich 16-bitową instrukcję {uart_data, first_byte} i przechodzi do SEND
+// SEND - wystawia instr_valid = 1, żeby potwierdzić gotową instrukcję, potem wraca do IDLE
+
 import cpu_defs::addr_word_t;
 
 module pmem_loader(
