@@ -49,12 +49,27 @@ typedef struct packed {
     logic signed [11:0] K;
 } inst_rjmp_t;
 
+// NOP 
+typedef struct packed {
+    logic [15:0] nop;
+} inst_nop_t;
+
+// CLEAR, SET FLAG BITS
+typedef struct packed {
+    logic [7:0] op; // 1001 0100
+    logic sreg_value; // 1 = clear, 0 = set
+    logic [2:0] sreg_bit;
+    logic [3:0] constant; // 1000
+} inst_BCLRorSET_t; //SREG BIT CLEAR OR SET
+ 
 typedef union packed {
     inst_word_t raw;
     inst_rr_rd_t rr_rd;
     inst_imm_t imm;
     inst_io_t io;
     inst_rjmp_t rjmp;
+    inst_nop_t nop;
+    inst_BCLRorSET_t BCLRorSET;
 } inst_t;
 
 
@@ -91,6 +106,27 @@ typedef enum logic [20:0] {
     OP_OUT,
     OP_MOV,
     OP_RJMP,
+    OP_NOP,  
+    //FLAG CLEAR
+    OP_BCLR,
+//    OP_CLC,
+//    OP_CLH,
+//    OP_CLI,
+//    OP_CLN,
+//    OP_CLS,
+//    OP_CLT,
+//    OP_CLV,
+//    OP_CLZ,
+    //FLAG SET 
+    OP_BSET,
+//    OP_SEC,
+//    OP_SEH,
+//    OP_SEI,
+//    OP_SEN,
+//    OP_SES,
+//    OP_SET,
+//    OP_SEV,
+//    OP_SEZ,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
 
@@ -105,6 +141,17 @@ typedef struct packed{
     logic T; //Transfer
     logic I; //Interrupt
 } flags_t;
+
+typedef enum logic [2:0] {
+    SREG_C = 3'd0,
+    SREG_Z = 3'd1,
+    SREG_N = 3'd2,
+    SREG_V = 3'd3,
+    SREG_S = 3'd4,
+    SREG_H = 3'd5,
+    SREG_T = 3'd6,
+    SREG_I = 3'd7
+} sreg_bit_e;
 
 endpackage : cpu_defs
 

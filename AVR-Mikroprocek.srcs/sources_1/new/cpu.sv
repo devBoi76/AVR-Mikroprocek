@@ -46,7 +46,8 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     data_word_t K;
     logic signed [11:0] big_K;
     addr_io_word_t A;
-    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A));
+    sreg_bit_e sreg_bit;
+    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A), .sreg_bit(sreg_bit));
     
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
@@ -56,6 +57,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
     data_word_t tmp_rd, tmp_rr, result_alu, result_mul_MSB, result_mul_LSB;
     //Można dodać sygnał reset_flags do resetowania wszystkich flag
+    
     
     
     cpu_state_e state = S_EXECUTE;
@@ -274,7 +276,119 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         // big_K ma 12 bitów, a pc ma 16 bitów. Trzeba castować, bo jedynki nie są powielane w przypatku ujemnej liczby.
                         pc <= pc + addr_word_t'(signed'(big_K)) + 1;
                         state <= S_EXECUTE;
+                     end
+                     OP_NOP: begin
+                        pc <= pc + 1;
+//                        state <= S_FETCH;
+                     end
+                     OP_BSET: begin
+                        pc <= pc + 1;
+                        unique case (sreg_bit)
+                            SREG_C: flags.C <= 1'b1;
+                            SREG_Z: flags.Z <= 1'b1;
+                            SREG_N: flags.N <= 1'b1;
+                            SREG_V: flags.V <= 1'b1;
+                            SREG_S: flags.S <= 1'b1;
+                            SREG_H: flags.H <= 1'b1;
+                            SREG_T: flags.T <= 1'b1;
+                            SREG_I: flags.I <= 1'b1;
+                        endcase
+                        state <= S_EXECUTE;
                      end 
+                     OP_BCLR: begin
+                        pc <= pc + 1;
+                        unique case (sreg_bit)
+                            SREG_C: flags.C <= 1'b0;
+                            SREG_Z: flags.Z <= 1'b0;
+                            SREG_N: flags.N <= 1'b0;
+                            SREG_V: flags.V <= 1'b0;
+                            SREG_S: flags.S <= 1'b0;
+                            SREG_H: flags.H <= 1'b0;
+                            SREG_T: flags.T <= 1'b0;
+                            SREG_I: flags.I <= 1'b0;
+                        endcase
+                        state <= S_EXECUTE;
+                     end 
+                     OP_CLC: begin
+                        pc <= pc + 1;
+                        flags.C <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLH: begin
+                        pc <= pc + 1;
+                        flags.H <= 0;
+                        state <= S_EXECUTE;
+                     end 
+                     OP_CLI: begin
+                        pc <= pc + 1;
+                        flags.I <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLN: begin
+                        pc <= pc + 1;
+                        flags.N <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLS: begin
+                        pc <= pc + 1;
+                        flags.S <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLZ: begin
+                        pc <= pc + 1;
+                        flags.Z <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLV: begin
+                        pc <= pc + 1;
+                        flags.V <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_CLT: begin
+                        pc <= pc + 1;
+                        flags.T <= 0;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SEC: begin
+                        pc <= pc + 1;
+                        flags.C <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SEH: begin
+                        pc <= pc + 1;
+                        flags.H <= 1;
+                        state <= S_EXECUTE;
+                     end 
+                     OP_SEI: begin
+                        pc <= pc + 1;
+                        flags.I <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SEN: begin
+                        pc <= pc + 1;
+                        flags.N <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SES: begin
+                        pc <= pc + 1;
+                        flags.S <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SEZ: begin
+                        pc <= pc + 1;
+                        flags.Z <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SEV: begin
+                        pc <= pc + 1;
+                        flags.V <= 1;
+                        state <= S_EXECUTE;
+                     end
+                     OP_SET: begin
+                        pc <= pc + 1;
+                        flags.T <= 1;
+                        state <= S_EXECUTE;
+                     end
                 endcase
             end
             S_MEMOP: begin

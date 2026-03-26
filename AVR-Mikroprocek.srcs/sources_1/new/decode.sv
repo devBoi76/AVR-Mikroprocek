@@ -27,6 +27,7 @@ module decode(
     output reg_addr_t Rd,
     output reg_addr_t Rr,
     output data_word_t K,
+    output sreg_bit_e sreg_bit,
     output logic signed [11:0] big_K, // używane np. w RJMP, RCALl
     output addr_io_word_t A
     );
@@ -143,6 +144,17 @@ module decode(
                 opcode = OP_RJMP;
                 big_K = inst.rjmp.K;
             end
+            16'b0000000000000000: begin
+                opcode = OP_NOP;
+            end
+            16'b100101000???1000: begin
+                opcode = OP_BSET;
+                sreg_bit = inst.BCLRorSET.sreg_bit;
+            end
+            16'b100101001???1000: begin
+                opcode = OP_BCLR;
+                sreg_bit = inst.BCLRorSET.sreg_bit;
+            end     
             default: begin
                 opcode = OP_UNKNOWN;
                 Rd = '0;
