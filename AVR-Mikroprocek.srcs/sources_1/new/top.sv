@@ -18,9 +18,10 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-import cpu_defs::*;
+import cpu_defs::addr_word_t;
+import cpu_defs::inst_word_t;
 
-module top #(parameter UART_CLK_FREQ, parameter UART_BR) (input logic clk, input logic uart_rx, input logic load_mode, input logic uart_reset);
+module top #(parameter UART_CLK_FREQ=100_000_000, parameter UART_BR=9600) (input logic clk, input logic uart_rx, input logic load_mode, input logic uart_reset);
     
     addr_word_t prog_addr;
     inst_word_t prog_data;

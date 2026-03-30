@@ -40,7 +40,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     assign pc_plus_two = pc + 2;
 
     data_word_t r[31:0];
-    localparam int SRAM_MAX_ADDR = 'h1FFF; // 8KB
+    localparam int SRAM_MAX_ADDR = 'h3FF; // 1KB 'h1FFF; // 8KB
     localparam int IO_BASE = 16'h0020; //32
     data_word_t sram[SRAM_MAX_ADDR:0];
     assign sram[31:0] = r[31:0];

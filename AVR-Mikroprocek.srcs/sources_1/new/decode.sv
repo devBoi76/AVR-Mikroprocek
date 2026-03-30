@@ -18,7 +18,6 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-
 import cpu_defs::*;
 
 module decode(
@@ -32,6 +31,15 @@ module decode(
     );
     
     always_comb begin
+        // 'RTL ANALYSIS > Run Linter' narzekał że to nie logika kombinacyjna.
+        // Ustawiamy 'dont-care' jako default
+        opcode = OP_UNKNOWN;
+        Rd     = 'x;
+        Rr     = 'x;
+        K      = 'x;
+        big_K  = 'x;
+        A      = 'x;
+        
         casez (inst.raw)
             16'b1110????????????: begin 
                 opcode = OP_LDI;
@@ -156,13 +164,6 @@ module decode(
             end
             16'b1001010100001000: begin
                 opcode = OP_RET;
-            end
-            default: begin
-                opcode = OP_UNKNOWN;
-                Rd = '0;
-                Rr = '0;
-                K = '0;
-                A = '0;
             end
         endcase
     end

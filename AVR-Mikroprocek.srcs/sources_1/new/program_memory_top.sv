@@ -18,7 +18,8 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-import cpu_defs::*;
+import cpu_defs::addr_word_t;
+import cpu_defs::inst_word_t;
 
 module pmem_top
     # (
