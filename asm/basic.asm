@@ -18,6 +18,10 @@ start:
 outer_loop:
     ldi r16, 3
 loop:
-    dec r16
+    call subroutine_dec_r16
     brne loop
     rjmp outer_loop
+
+subroutine_dec_r16:
+    dec r16
+    ret

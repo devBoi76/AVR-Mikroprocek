@@ -30,10 +30,10 @@
 
 ## Control Flow
 - [x] `RJMP`
-- [ ] `JMP`
+- [x] `JMP`
 - [ ] `RCALL`
-- [ ] `CALL`
-- [ ] `RET`
+- [x] `CALL`
+- [x] `RET`
 - [ ] `CP`
 - [ ] `CPI`
 - [x] `BREQ`

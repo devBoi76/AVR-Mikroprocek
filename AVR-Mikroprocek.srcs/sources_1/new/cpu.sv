@@ -25,7 +25,9 @@ typedef enum logic [2:0] {
     MEM_POP_SP,
     MEM_WRITE_PC,
     MEM_FETCH_WAIT,
-    MEM_CALL
+    MEM_CALL,
+    MEM_RET1,
+    MEM_RET2
 } memop_dir_e;
 
 module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data);    
@@ -56,6 +58,7 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
     reg_addr_t memop_r;
+    addr_word_t scratch_addr_reg; // Używany w czytaniu stosu przy wykonywaniu RET
     
     //flagi i zmienne do wyliczeń
     flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
@@ -302,6 +305,11 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         sram[sp] <= pc_plus_two[15:8]; // high byte
                         sp <= sp - 1;
                      end
+                     OP_RET: begin
+                        sp <= sp + 1;
+                        memop_dir <= MEM_RET1;
+                        state <= S_MEMOP;
+                     end
                 endcase
             end
             S_MEMOP: begin
@@ -330,6 +338,16 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                         // `PC+1` bo mamy: <addr> <inna instrukcja>
                         sram[sp] <= pc_plus_one[7:0]; // low byte
                         sp <= sp - 1;
+                    end
+                    MEM_RET1: begin
+                        sp <= sp + 1;
+                        scratch_addr_reg[7:0] <= sram[sp]; // low byte
+                        memop_dir <= MEM_RET2;
+                        state <= S_MEMOP;
+                    end
+                    MEM_RET2: begin
+                        pc <= {sram[sp], scratch_addr_reg[7:0]};
+                        state <= S_EXECUTE;
                     end
                 endcase
             end

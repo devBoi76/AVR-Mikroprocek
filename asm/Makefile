@@ -1,4 +1,4 @@
-MCU  := avr4
+MCU  := avrxmega2
 SRCS := $(wildcard *.asm)
 HEXS := $(SRCS:.asm=.mem)
 
@@ -10,7 +10,7 @@ all: $(HEXS)
 	avr-as --no-pad-sections -mmcu=$(MCU) -o $@ $<
 
 %.elf: %.o
-	avr-ld --no-relax -o $@ $<
+	avr-ld --no-relax -o $@ $< -m$(MCU)
 
 %.bin: %.elf
 	avr-objcopy -O binary $< $@
