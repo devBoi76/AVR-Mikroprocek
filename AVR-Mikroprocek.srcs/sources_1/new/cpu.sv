@@ -24,13 +24,18 @@ typedef enum logic [2:0] {
     MEM_READ_PC,
     MEM_POP_SP,
     MEM_WRITE_PC,
-    MEM_FETCH_WAIT
+    MEM_FETCH_WAIT,
+    MEM_CALL
 } memop_dir_e;
 
 module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data);    
     
     addr_word_t pc = 0; // program counter
     assign prog_addr = pc;
+    addr_word_t pc_plus_one; 
+    assign pc_plus_one = pc + 1;
+    addr_word_t pc_plus_two;
+    assign pc_plus_two = pc + 2;
 
     data_word_t r[31:0];
     localparam int SRAM_MAX_ADDR = 'h1FFF; // 8KB
@@ -289,6 +294,14 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                             pc <= pc + 1;
                         state <= S_EXECUTE;
                      end
+                     OP_CALL: begin
+                        pc <= pc + 1;
+                        memop_dir <= MEM_CALL;
+                        state <= S_MEMOP;
+                        // push PC to stack. `PC+2` bo mamy: <call> <addr> <inna instrukcja>
+                        sram[sp] <= pc_plus_two[15:8]; // high byte
+                        sp <= sp - 1;
+                     end
                 endcase
             end
             S_MEMOP: begin
@@ -310,6 +323,13 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                     end
                     MEM_FETCH_WAIT: begin
                         state <= S_EXECUTE;
+                    end
+                    MEM_CALL: begin
+                        pc <= prog_data;
+                        state <= S_EXECUTE;
+                        // `PC+1` bo mamy: <addr> <inna instrukcja>
+                        sram[sp] <= pc_plus_one[7:0]; // low byte
+                        sp <= sp - 1;
                     end
                 endcase
             end

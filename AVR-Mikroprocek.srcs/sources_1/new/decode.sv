@@ -151,6 +151,12 @@ module decode(
                 opcode = OP_BREQ;
                 big_K = inst.br.K;
             end
+            16'b1001010000001110: begin
+                opcode = OP_CALL;
+            end
+            16'b1001010100001000: begin
+                opcode = OP_RET;
+            end
             default: begin
                 opcode = OP_UNKNOWN;
                 Rd = '0;

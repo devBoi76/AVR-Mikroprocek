@@ -101,6 +101,8 @@ typedef enum logic [20:0] {
     OP_RJMP,
     OP_BREQ,
     OP_BRNE,
+    OP_CALL,
+    OP_RET,
     OP_UNKNOWN = 7'bxxxxxxx
 } opcode_e;
 

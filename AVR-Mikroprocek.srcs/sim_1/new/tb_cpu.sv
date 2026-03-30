@@ -26,7 +26,8 @@ module tb_cpu();
 
     localparam PROG_SIZE = 32;
     inst_word_t prog[PROG_SIZE:0];
-    
+    initial $readmemh("basic.mem", prog);
+    /*
     initial begin
         prog[0] = 16'b1110_0000_0000_1010; // LDI r16, 10
         prog[1] = 16'b1110_0001_0001_0100; // LDI r17, 20
@@ -51,7 +52,7 @@ module tb_cpu();
         prog[20] = 16'b111101_1111110_001; // BRNE -2
         prog[21] = 16'b1100_1111_1111_1100; // RJMP -4
     end
-
+    */
     logic uart_rx = 1;
     logic load_mode = 0;
     logic uart_reset = 1;
@@ -90,8 +91,8 @@ module tb_cpu();
     
     task uart_send_inst(input inst_word_t inst);
         begin
-            uart_send_byte(inst[7:0]); // low byte
             uart_send_byte(inst[15:8]); // high byte
+            uart_send_byte(inst[7:0]); // low byte
         end
     endtask
 

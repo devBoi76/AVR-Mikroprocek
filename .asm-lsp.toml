@@ -1,0 +1,6 @@
+[default_config]
+assembler = "gcc"
+instruction_set = "avr"
+
+[default_config.opts]
+compiler = "avr-as"
