@@ -40,122 +40,168 @@ module decode(
         K      = 'x;
         big_K  = 'x;
         A      = 'x;
-        ctrl = '{register_writeback_source:SOURCE_NONE};
+        ctrl = '{
+        register_writeback_source:SOURCE_NONE,
+        alu_op_src:ALU_OPERANDS_NONE,
+        alu_is_mul: 0,
+        sram_cmd:SRAM_NONE,
+        sram_addr_src:SRAM_ADDR_NONE,
+        pc_source:PC_PLUS_ONE,
+        sp_source:SP_KEEP,
+        next_instruction_word_is_addr:0};
 
         casez (inst.raw)
             16'b1110????????????: begin
                 opcode = OP_LDI;
                 Rd = {1'b1, inst.imm.d}; // r16-r31
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
+                ctrl.register_writeback_source = SOURCE_CONSTANT;
             end
             16'b1001000?????0000: begin
                 opcode = OP_LDS;
                 Rd = {inst.rr_rd.d};
+                ctrl.register_writeback_source = SOURCE_SRAM;
+                ctrl.sram_cmd = SRAM_READ;
+                ctrl.sram_addr_src = SRAM_ADRR_NEXTWORD;
+                ctrl.next_instruction_word_is_addr = 1;
+                ctrl.pc_source = PC_PLUS_TWO;
             end
             16'b1001001?????0000: begin
                 opcode = OP_STS;
                 Rd = {inst.rr_rd.d};
+                ctrl.sram_cmd = SRAM_WRITE;
+                ctrl.sram_addr_src = SRAM_ADRR_NEXTWORD;
+                ctrl.next_instruction_word_is_addr = 1;
+                ctrl.pc_source = PC_PLUS_TWO;
             end
             16'b1001001?????1111: begin
                 opcode = OP_PUSH;
                 Rd = {inst.rr_rd.d};
+                ctrl.sram_cmd = SRAM_WRITE;
+                ctrl.sram_addr_src = SRAM_ADRR_SP;
+                crtl.sp_source = SP_DEC;
             end
             16'b1001000?????1111: begin
                 opcode = OP_POP;
                 Rd = {inst.rr_rd.d};
+                ctrl.sram_cmd = SRAM_READ;
+                ctrl.sram_addr_src = SRAM_ADRR_SP;
+                crtl.sp_source = SP_INC;
+                ctrl.register_writeback_source = SOURCE_SRAM;
             end
             16'b000011??????????: begin
                 opcode = OP_ADD;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b000111??????????: begin
                 opcode = OP_ADC;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b000110??????????: begin
                 opcode = OP_SUB;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b000010??????????: begin
                 opcode = OP_SBC;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b001000??????????: begin
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                if(Rd == Rr)
+                if(Rd == Rr) begin
                     opcode = OP_TST;
-                else
+                    ctrl.alu_op_src = ALU_OPERANDS_RD;
+                end else begin
                     opcode = OP_AND;
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                    ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                end
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b0111????????????: begin
                 opcode = OP_ANDI;
                 Rd = {1'b1, inst.imm.d};
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_K;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b001010??????????: begin
                 opcode = OP_OR;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b0110????????????: begin
                 opcode = OP_ORI;
                 Rd = {1'b1, inst.imm.d};
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_K;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b001001??????????: begin
                 opcode = OP_EOR;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                if(Rd == Rr)
+                if(Rd == Rr) begin
+                    ctrl.alu_op_src = ALU_OPERANDS_RD;
                     opcode = OP_CLR;
-                else
+                end else begin
+                    ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
                     opcode = OP_EOR;
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                end
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b1001010?????0011: begin
                 opcode = OP_INC;
                 Rd = {inst.rr_rd.d};
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b1001010?????1010: begin
                 opcode = OP_DEC;
                 Rd = {inst.rr_rd.d};
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD;
+                ctrl.register_writeback_source = SOURCE_ALU;
             end
             16'b100111??????????: begin
                 opcode = OP_MUL;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
+                ctrl.alu_is_mul = 1;
             end
             16'b00000010????????: begin
                 opcode = OP_MULS;
                 Rd = {1'b1, inst.raw[7:4]};
                 Rr = {1'b1, inst.raw[3:0]};
-                ctrl.register_writeback_source <= SOURCE_ALU;
+                ctrl.alu_op_src = ALU_OPERANDS_RD_RR;
+                ctrl.register_writeback_source = SOURCE_ALU;
+                ctrl.alu_is_mul = 1;
             end
             16'b001011??????????: begin
                 opcode = OP_MOV;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source = SOURCE_REGISTER;
             end
             16'b10110???????????: begin
                 opcode = OP_IN;
                 Rd = inst.io.d;
                 A = {inst.io.A_top_bits, inst.io.A_btm_bits };
+                ctrl.register_writeback_source = SOURCE_MMIO;
             end
             16'b10111???????????: begin
                 opcode = OP_OUT;
@@ -176,9 +222,12 @@ module decode(
             end
             16'b1001010000001110: begin
                 opcode = OP_CALL;
+                ctrl.next_instruction_word_is_addr = 1;
+                ctrl.pc_source = PC_JMP;
             end
             16'b1001010100001000: begin
                 opcode = OP_RET;
+                ctrl.pc_source = PC_RET;
             end
         endcase
     end

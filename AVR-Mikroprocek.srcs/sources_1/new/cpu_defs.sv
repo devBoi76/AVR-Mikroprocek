@@ -3,11 +3,15 @@
 // memory_bus_t memory_bus; // możesz wykorzystać definicje z tego pakietu
 package cpu_defs;
 
+parameter int REG_MAX_ADDR = 32;
 parameter int BITS_ADDR_IO = 6;
+parameter int MMIO_ADDR_SIZE = 2**BITS_ADDR_IO;
+parameter int MMIO_MAX_ADDR = REG_MAX_ADDR + MMIO_ADDR_SIZE;
+parameter int SRAM_MAX_ADDR = 'h3FF; // 1KB 'h1FFF; // 8KB
+
 parameter int BITS_DATA = 8;
 parameter int BITS_ADDR = 16;
 parameter int BITS_INST = 16;
-parameter int SRAM_MAX_ADDR = 'h3FF; // 1KB 'h1FFF; // 8KB
 
 
 // Definiujesz typ data_word_t (TYPY KOŃCZYMY _T JAKO ZWYCZAJ)
@@ -120,17 +124,67 @@ typedef struct packed{
     logic I; //Interrupt
 } flags_t;
 
-//Źródło sygnału
+typedef enum logic [2:0] {
+    DATASPACE_MEM_NONE,
+    DATASPACE_MEM_MOV, // Rd <- Rr.
+    DATASPACE_MEM_REG_WRITE, // Rd <- Rd_data_in; Rr <- Rr_data_in. Używane przez ALU
+    DATASPACE_MEM_DOUBLE_WRITE, // {R[memop], R[memop+1]} <- {Rd_data_in, Rr_data_in}
+    DATASPACE_MEM_MMIO_READ, // Rd <- mmio[A],
+    DATASPACE_MEM_MMIO_WRITE, // mmio[A] <- Rr,
+    DATASPACE_MEM_SRAM_READ, // Rmemop <- sram[A]
+    DATASPACE_MEM_SRAM_WRITE // sram[A] <- Rmemop
+} dataspace_memop_e;
+
+typedef enum logic [2:0] {
+    SOURCE_NONE,
+    SOURCE_CONSTANT, // np. LDI
+    SOURCE_SRAM, // LDS
+    SOURCE_MMIO, // IN
+    SOURCE_ALU, // ADD
+    SOURCE_REGISTER // MOV
+} register_writeback_source_e;
 
 typedef enum logic [1:0] {
-    SOURCE_NONE,
-    SOURCE_CPU,
-    SOURCE_ALU
-}source_e;
+    ALU_OPERANDS_NONE,
+    ALU_OPERANDS_RD,
+    ALU_OPERANDS_RD_RR,
+    ALU_OPERANDS_RD_K
+} alu_operands_source_e;
+
+typedef enum logic [1:0] {
+    SRAM_NONE,
+    SRAM_READ,
+    SRAM_WRITE
+} sram_command_e;
+
+typedef enum logic [1:0] {
+    SRAM_ADDR_NONE,
+    SRAM_ADDR_SP,
+    SRAM_ADRR_NEXTWORD
+} sram_addr_source;
+
+typedef enum logic [1:0] {
+    PC_PLUS_ONE,
+    PC_PLUS_TWO,
+    PC_JMP,
+    PC_RET
+} pc_source_e;
+
+typedef enum logic [1:0] {
+    SP_KEEP,
+    SP_INC,
+    SP_DEC
+} sp_source_e;
 
 typedef struct packed {
-    source_e register_writeback_source;
+    register_writeback_source_e register_writeback_source;
+    alu_operands_source_e alu_op_src;
+    logic alu_is_mul;
+    sram_command_e sram_cmd;
+    sram_addr_source sram_addr_src;
+    pc_source_e pc_source;
+    sp_source_e sp_source;
+    logic next_instruction_word_is_addr;
 } ctrl_t;
-
 
 endpackage : cpu_defs
