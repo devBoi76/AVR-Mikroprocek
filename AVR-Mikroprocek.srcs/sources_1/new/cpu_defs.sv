@@ -119,11 +119,17 @@ typedef struct packed{
 } flags_t;
 
 //Źródło sygnału
+
 typedef enum logic [1:0] {
-    NONE,
+    SOURCE_NONE,
     SOURCE_CPU,
     SOURCE_ALU    
 }source_e;
+
+typedef struct packed {
+    source_e register_writeback_source;
+} ctrl_t;
+
 
 endpackage : cpu_defs
 

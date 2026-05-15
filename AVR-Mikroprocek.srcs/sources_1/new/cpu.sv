@@ -1,22 +1,22 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
+// Company:
+// Engineer:
+//
 // Create Date: 03/14/2026 12:51:02 PM
-// Design Name: 
+// Design Name:
 // Module Name: cpu
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 import cpu_defs::*;
 
@@ -30,24 +30,24 @@ typedef enum logic [2:0] {
     MEM_RET2
 } memop_dir_e;
 
-module cpu(input clk, 
+module cpu(input clk,
     output addr_word_t prog_addr,
-    input inst_word_t prog_data, 
+    input inst_word_t prog_data,
     //Poniższe I/O są używane do przekazywania danych do ALU
-    output opcode_e opcode_out, 
-    output data_word_t alu_primary, 
-    output data_word_t alu_secondary, 
+    output opcode_e opcode_out,
+    output data_word_t alu_primary,
+    output data_word_t alu_secondary,
     output flags_t flags_out,
     //Poniżej wejścia do zmiany flag oraz zawartości rejestrów
     input data_word_t register_in,
     input data_word_t multiply_high,
-    input flags_t flags_in);    
+    input flags_t flags_in);
 
 
-    
+
     addr_word_t pc = 0; // program counter
     assign prog_addr = pc;
-    addr_word_t pc_plus_one; 
+    addr_word_t pc_plus_one;
     assign pc_plus_one = pc + 1;
     addr_word_t pc_plus_two;
     assign pc_plus_two = pc + 2;
@@ -67,28 +67,29 @@ module cpu(input clk,
     logic signed [11:0] big_K;
     addr_io_word_t A;
     decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A));
-    
+
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
     reg_addr_t memop_r;
     addr_word_t scratch_addr_reg; // Używany w czytaniu stosu przy wykonywaniu RET
-    
+
     //flagi i zmienne do wyliczeń
     flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
     data_word_t tmp_rd, tmp_rr, result_alu, result_mul_MSB, result_mul_LSB;
-    
+
     //Sygnał mówiący czy operacja jest mnożeniem (potrzebuje 2 rejestrów)
     logic is_it_mul = 1'b0;
-    
+
     //Utrzymanie rejestru rd i opcode do alu
     reg_addr_t alu_rd;
     opcode_e alu_opcode;
-    
-    //Źródło sygnału
-    source_e source = NONE;
+
+    // sygnały kontrolne
+    ctrl_t ctrl = '{register_writeback_source:SOURCE_NONE};
+
     //Można dodać sygnał reset_flags do resetowania wszystkich flag
-    
-    
+
+
     cpu_state_e state = S_EXECUTE;
     always_ff @(negedge clk) begin // always_ff <=> używamy '<=' nieblokujące
         opcode_out <= opcode;
@@ -109,7 +110,7 @@ module cpu(input clk,
                     OP_LDS: begin
                         pc <= pc + 1;
                         memop_r <= Rd;
-                        memop_dir <= MEM_READ_PC;  
+                        memop_dir <= MEM_READ_PC;
                         state <= S_MEMOP;
                     end
                     OP_STS: begin
@@ -135,87 +136,87 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                     end
                     OP_ADC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                     end
                     OP_SUB: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_SBC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_AND: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_ANDI: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= K;
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_OR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_ORI: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= K;
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_EOR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_INC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_DEC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_TST: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_CLR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_MUL: begin
                         pc <= pc + 1;
@@ -223,7 +224,7 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_MULS: begin
                         pc <= pc + 1;
@@ -231,7 +232,7 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        source <= SOURCE_ALU;
+                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_IN: begin
                         pc <= pc + 1;
@@ -321,17 +322,17 @@ module cpu(input clk,
                     end
                 endcase
             end
-        
+
         endcase
     end
     always_ff @(posedge clk) begin
-        case(source)
-            NONE:begin
+        case(ctrl.register_writeback_source)
+            SOURCE_NONE:begin
             end
             SOURCE_CPU:begin
             end
             SOURCE_ALU:begin
-                source <= NONE;
+                ctrl.register_writeback_source <= SOURCE_NONE;
                 flags <= flags_in;
                 if(is_it_mul) begin
                     is_it_mul <= 0;
