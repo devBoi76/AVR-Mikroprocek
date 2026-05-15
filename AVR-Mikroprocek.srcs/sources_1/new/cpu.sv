@@ -30,7 +30,20 @@ typedef enum logic [2:0] {
     MEM_RET2
 } memop_dir_e;
 
-module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data);    
+module cpu(input clk, 
+    output addr_word_t prog_addr,
+    input inst_word_t prog_data, 
+    //Poniższe I/O są używane do przekazywania danych do ALU
+    output opcode_e opcode_out, 
+    output data_word_t alu_primary, 
+    output data_word_t alu_secondary, 
+    output flags_t flags_out,
+    //Poniżej wejścia do zmiany flag oraz zawartości rejestrów
+    input data_word_t register_in,
+    input data_word_t multiply_high,
+    input flags_t flags_in);    
+
+
     
     addr_word_t pc = 0; // program counter
     assign prog_addr = pc;
@@ -63,11 +76,24 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
     //flagi i zmienne do wyliczeń
     flags_t flags = '{C:0, Z:0, N:0, V:0, S:0, H:0, T:0, I:0};
     data_word_t tmp_rd, tmp_rr, result_alu, result_mul_MSB, result_mul_LSB;
+    
+    //Sygnał mówiący czy operacja jest mnożeniem (potrzebuje 2 rejestrów)
+    logic is_it_mul = 1'b0;
+    
+    //Utrzymanie rejestru rd i opcode do alu
+    reg_addr_t alu_rd;
+    opcode_e alu_opcode;
+    
+    //Źródło sygnału
+    source_e source = NONE;
     //Można dodać sygnał reset_flags do resetowania wszystkich flag
     
     
     cpu_state_e state = S_EXECUTE;
     always_ff @(negedge clk) begin // always_ff <=> używamy '<=' nieblokujące
+        opcode_out <= opcode;
+        flags_out <= flags;
+        alu_rd <= Rd;
         case (state)
             S_EXECUTE: begin
                 // W przyszłości lepiej rozbudować to w ten sposób:
@@ -106,162 +132,106 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                     end
                     OP_ADD: begin
                         pc <= pc + 1;
-                        tmp_rd = r[Rd];
-                        tmp_rr = r[Rr];
-                        {flags.C, result_alu} = r[Rd] + r[Rr];
-                        r[Rd] <= result_alu;
-                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
-                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
-                        flags.N <= result_alu[7];
-                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
-                        flags.Z <= (result_alu == 0);
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                     end
                     OP_ADC: begin
                         pc <= pc + 1;
-                        tmp_rd = r[Rd];
-                        tmp_rr = r[Rr];
-                        {flags.C, result_alu} = r[Rd] + r[Rr] + flags.C;
-                        r[Rd] <= result_alu;
-                        flags.H <= (tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & !result_alu[3]) | (tmp_rd[3] & !result_alu[3]);
-                        flags.V <= (tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]);
-                        flags.N <= result_alu[7];
-                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & !tmp_rr[7] & result_alu[7]));
-                        flags.Z <= (result_alu == 0);
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                     end
                     OP_SUB: begin
                         pc <= pc + 1;
-                        tmp_rd = r[Rd];
-                        tmp_rr = r[Rr];
-                        result_alu = r[Rd] - r[Rr];
-                        flags.C = tmp_rr > tmp_rd;
-                        r[Rd] <= result_alu;
-                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
-                        flags.V <= (tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
-                        flags.N <= result_alu[7];
-                        flags.S <= result_alu[7] ^ ((tmp_rd[7] & !tmp_rr[7] &!result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
-                        flags.Z <= (result_alu == 0);
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_SBC: begin
                         pc <= pc + 1;
-                        tmp_rd = r[Rd];
-                        tmp_rr = r[Rr];
-                        result_alu = r[Rd] - r[Rr] - flags.C;
-                        flags.C = tmp_rr + flags.C > tmp_rd;
-                        r[Rd] <= result_alu;
-                        flags.H <= (!tmp_rd[3] & tmp_rr[3]) | (tmp_rr[3] & result_alu[3]) | (result_alu[3] & !tmp_rd[3]);
-                        flags.V <= (tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]);
-                        flags.N <= result_alu[7];
-                        flags.S <= result_alu[7] ^((tmp_rd[7] & !tmp_rr[7] & !result_alu[7]) | (!tmp_rd[7] & tmp_rr[7] & result_alu[7]));
-                        flags.Z <= (result_alu == 0) & flags.Z;
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_AND: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] & r[Rr];
-                        r[Rd] <= result_alu;
-                        flags.V = 0;
-                        flags.N = result_alu[7];
-                        flags.S = 0 ^ result_alu[7];
-                        flags.Z = (result_alu == 0);
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_ANDI: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] & K;
-                        r[Rd] <= result_alu;
-                        flags.V = 0;
-                        flags.N = result_alu[7];
-                        flags.S = 0 ^ result_alu[7];
-                        flags.Z = (result_alu == 0);
+                        alu_primary <= r[Rd];
+                        alu_secondary <= K;
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_OR: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] | r[Rr];
-                        r[Rd] <= result_alu;
-                        flags.V = 0;
-                        flags.N = result_alu[7];
-                        flags.Z = (result_alu == 0);
-                        flags.S = 0 ^ result_alu[7];
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_ORI: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] | K;
-                        r[Rd] <= result_alu;
-                        flags.V = 0;
-                        flags.N = result_alu[7];
-                        flags.Z = (result_alu == 0);
-                        flags.S = 0 ^ result_alu[7];
+                        alu_primary <= r[Rd];
+                        alu_secondary <= K;
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_EOR: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] ^ r[Rr];
-                        r[Rd] <= result_alu;
-                        flags.V = 0;
-                        flags.N = result_alu[7];
-                        flags.Z = (result_alu == 0);
-                        flags.S = 0 ^ result_alu[7];
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_INC: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] + 1;
-                        r[Rd] <= result_alu;
-                        flags.V = (result_alu == 128);
-                        flags.N = result_alu[7];
-                        flags.S = (result_alu[7]) ^ (result_alu == 128);
-                        flags.Z = (result_alu == 0);
+                        alu_primary <= r[Rd];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_DEC: begin
                         pc <= pc + 1;
-                        result_alu = r[Rd] - 1;
-                        r[Rd] <= result_alu;
-                        flags.V = (result_alu == 127);
-                        flags.N = result_alu[7];
-                        flags.S = (result_alu[7]) ^ (result_alu == 127);
-                        flags.Z = (result_alu == 0);
+                        alu_primary <= r[Rd];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_TST: begin
                         pc <= pc + 1;
-                        flags.V = 0;
-                        flags.N = r[Rd][7];
-                        flags.S = 0 ^ r[Rd][7];
-                        flags.Z = (r[Rd] == 0);
+                        alu_primary <= r[Rd];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_CLR: begin
                         pc <= pc + 1;
-                        flags.S = 0;
-                        flags.V = 0;
-                        flags.N = 0;
-                        flags.Z = 1;
-                        r[Rd] = r[Rd] ^ r[Rd];
+                        alu_primary <= r[Rd];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_MUL: begin
                         pc <= pc + 1;
-                        {result_mul_MSB, result_mul_LSB} = r[Rd] * r[Rr];
-                        r[1] <= result_mul_MSB;
-                        r[0] <= result_mul_LSB;
-                        flags.C = result_mul_MSB[7];
-                        flags.Z = (result_mul_MSB == 0 & result_mul_LSB == 0);
+                        is_it_mul <= 1;
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_MULS: begin
                         pc <= pc + 1;
-                        {result_mul_MSB, result_mul_LSB} = $signed(r[Rd]) * $signed(r[Rr]);
-                        r[1] <= result_mul_MSB;
-                        r[0] <= result_mul_LSB;
-                        flags.C = result_mul_MSB[7];
-                        flags.Z = (result_mul_MSB == 0 & result_mul_LSB == 0);
+                        is_it_mul <= 1;
+                        alu_primary <= r[Rd];
+                        alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
+                        source <= SOURCE_ALU;
                      end
                      OP_IN: begin
                         pc <= pc + 1;
@@ -352,6 +322,26 @@ module cpu(input clk, output addr_word_t prog_addr, input inst_word_t prog_data)
                 endcase
             end
         
+        endcase
+    end
+    always_ff @(posedge clk) begin
+        case(source)
+            NONE:begin
+            end
+            SOURCE_CPU:begin
+            end
+            SOURCE_ALU:begin
+                source <= NONE;
+                flags <= flags_in;
+                if(is_it_mul) begin
+                    is_it_mul <= 0;
+                    r[1] <= multiply_high;
+                    r[0] <= register_in;
+                end
+                else begin
+                    r[alu_rd] <= register_in;
+                end
+            end
         endcase
     end
 
