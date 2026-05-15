@@ -32,16 +32,8 @@ typedef enum logic [2:0] {
 
 module cpu(input clk,
     output addr_word_t prog_addr,
-    input inst_word_t prog_data,
-    //Poniższe I/O są używane do przekazywania danych do ALU
-    output opcode_e opcode_out,
-    output data_word_t alu_primary,
-    output data_word_t alu_secondary,
-    output flags_t flags_out,
-    //Poniżej wejścia do zmiany flag oraz zawartości rejestrów
-    input data_word_t register_in,
-    input data_word_t multiply_high,
-    input flags_t flags_in);
+    input inst_word_t prog_data
+        );
 
 
 
@@ -70,6 +62,14 @@ module cpu(input clk,
     ctrl_t ctrl;
     decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A), .ctrl(ctrl));
 
+    data_word_t ALU_a;
+    data_word_t ALU_b;
+    data_word_t ALU_out;
+    data_word_t ALU_out_mul;
+    data_word_t ALU_out_flags;
+    ALU alu (.opcode(opcode), .A(ALU_a), .B(ALU_b), .flags(flags), .result_alu(ALU_out), .multiply_high(ALU_out_mul), .flagsout(ALU_out_flags));
+
+
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
     reg_addr_t memop_r;
@@ -82,19 +82,8 @@ module cpu(input clk,
     //Sygnał mówiący czy operacja jest mnożeniem (potrzebuje 2 rejestrów)
     logic is_it_mul = 1'b0;
 
-    //Utrzymanie rejestru rd i opcode do alu
-    reg_addr_t alu_rd;
-    opcode_e alu_opcode;
-
-
-    //Można dodać sygnał reset_flags do resetowania wszystkich flag
-
-
     cpu_state_e state = S_EXECUTE;
     always_ff @(negedge clk) begin // always_ff <=> używamy '<=' nieblokujące
-        opcode_out <= opcode;
-        flags_out <= flags;
-        alu_rd <= Rd;
         case (state)
             S_EXECUTE: begin
                 // W przyszłości lepiej rozbudować to w ten sposób:
@@ -133,90 +122,90 @@ module cpu(input clk,
                     end
                     OP_ADD: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                     end
                     OP_ADC: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                     end
                     OP_SUB: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_SBC: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_AND: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_ANDI: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= K;
+                        ALU_a <= r[Rd];
+                        ALU_b <= K;
                         state <= S_EXECUTE;
                      end
                      OP_OR: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_ORI: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= K;
+                        ALU_a <= r[Rd];
+                        ALU_b <= K;
                         state <= S_EXECUTE;
                      end
                      OP_EOR: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_INC: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
+                        ALU_a <= r[Rd];
                         state <= S_EXECUTE;
                      end
                      OP_DEC: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
+                        ALU_a <= r[Rd];
                         state <= S_EXECUTE;
                      end
                      OP_TST: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
+                        ALU_a <= r[Rd];
                         state <= S_EXECUTE;
                      end
                      OP_CLR: begin
                         pc <= pc + 1;
-                        alu_primary <= r[Rd];
+                        ALU_a <= r[Rd];
                         state <= S_EXECUTE;
                      end
                      OP_MUL: begin
                         pc <= pc + 1;
                         is_it_mul <= 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_MULS: begin
                         pc <= pc + 1;
                         is_it_mul <= 1;
-                        alu_primary <= r[Rd];
-                        alu_secondary <= r[Rr];
+                        ALU_a <= r[Rd];
+                        ALU_b <= r[Rr];
                         state <= S_EXECUTE;
                      end
                      OP_IN: begin
@@ -318,14 +307,14 @@ module cpu(input clk,
             end
             SOURCE_ALU:begin
                 ctrl.register_writeback_source <= SOURCE_NONE;
-                flags <= flags_in;
+                flags <= ALU_out_flags;
                 if(is_it_mul) begin
                     is_it_mul <= 0;
-                    r[1] <= multiply_high;
-                    r[0] <= register_in;
+                    r[1] <= ALU_out_mul;
+                    r[0] <= ALU_out;
                 end
                 else begin
-                    r[alu_rd] <= register_in;
+                    r[Rd] <= ALU_out;
                 end
             end
         endcase

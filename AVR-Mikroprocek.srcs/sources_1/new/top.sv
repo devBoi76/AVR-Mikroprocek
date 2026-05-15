@@ -27,18 +27,9 @@ module top #(parameter UART_CLK_FREQ=100_000_000, parameter UART_BR=9600) (input
     inst_word_t prog_data;
     logic frame_error;
 
-    opcode_e opcode_transfer;
-    data_word_t Register_d;
-    data_word_t Register_r_K;
-    flags_t flags_transfer;
-    data_word_t ALU_out;
-    data_word_t ALU_out_mul;
-    flags_t flags_ALU;
-
     pmem_top #(.CLK_FREQ(UART_CLK_FREQ), .BR(UART_BR)) pmem (
     .clk(clk), .reset(uart_reset), .load_mode(load_mode), .uart_rx(uart_rx),
     .cpu_addr(prog_addr), .instr_out(prog_data), .frame_error(frame_error));
 
-    cpu cpu (.clk(clk & (load_mode == 0)), .prog_addr(prog_addr), .prog_data(prog_data), .opcode_out(opcode_transfer), .alu_primary(Register_d), .alu_secondary(Register_r_K), .flags_out(flags_transfer), .register_in(ALU_out), .multiply_high(ALU_out_mul), .flags_in(flags_ALU));
-    ALU alu (.opcode(opcode_transfer), .A(Register_d), .B(Register_r_K), .flags(flags_transfer), .result_alu(ALU_out), .multiply_high(ALU_out_mul), .flagsout(flags_ALU));
+    cpu cpu (.clk(clk & (load_mode == 0)), .prog_addr(prog_addr), .prog_data(prog_data));
 endmodule
