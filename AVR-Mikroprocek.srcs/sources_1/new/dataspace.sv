@@ -33,22 +33,25 @@ module dataspace(
     input logic clk,
     input dataspace_memop_e memop,
 
-    input reg_addr_t Rmemop,
-    input addr_word_t sram_addr_in,
 
+    input reg_addr_t Rmemop,
     input addr_io_word_t mmio_addr_in,
+
+    input addr_word_t sram_addr_in,
+    input data_word_t sram_data_in,
+    output data_word_t sram_data_out,
 
     input reg_addr_t Rd,
     input data_word_t Rd_data_in,
-    input data_word_t Rd_data_out,
+    output data_word_t Rd_data_out,
     input reg_addr_t Rr,
     input data_word_t Rr_data_in,
-    input data_word_t Rr_data_out
+    output data_word_t Rr_data_out
     );
 
     data_word_t registers[REG_MAX_ADDR-1:0];
     data_word_t mmio[MMIO_ADDR_SIZE-1:0];
-    data_word_t sram[SRAM_MAX_ADDR-MMIO_MAX_ADDR:0];
+    data_word_t sram[SRAM_MAX_ADDR:MMIO_MAX_ADDR];
 
     // odczyt rejestrów kombinacyjnie
     always_comb begin
@@ -62,13 +65,12 @@ module dataspace(
             DATASPACE_MEM_MOV: begin
                 registers[Rd] <= registers[Rr];
             end
+            DATASPACE_MEM_REG_WRITE: begin
+                registers[Rmemop] <= Rd_data_in;
+            end
             DATASPACE_MEM_DOUBLE_WRITE: begin
                 registers[Rmemop] <= Rd_data_in;
                 registers[Rmemop + 1] <= Rr_data_in;
-            end
-            DATASPACE_MEM_REG_WRITE: begin
-                registers[Rd] <= Rd_data_in;
-                registers[Rr] <= Rr_data_in;
             end
             DATASPACE_MEM_MMIO_READ: begin
                 registers[Rd] <= mmio[mmio_addr_in];
@@ -78,20 +80,20 @@ module dataspace(
             end
             DATASPACE_MEM_SRAM_READ: begin
                 if (sram_addr_in < REG_MAX_ADDR) begin
-                    registers[Rmemop] <= registers[sram_addr_in];
+                    sram_data_out <= registers[sram_addr_in];
                 end else if (sram_addr_in < MMIO_MAX_ADDR) begin
-                    registers[Rmemop] <= mmio[sram_addr_in - REG_MAX_ADDR];
+                    sram_data_out <= mmio[sram_addr_in - REG_MAX_ADDR];
                 end else begin
-                    registers[Rmemop] <= sram[sram_addr_in];
+                    sram_data_out <= sram[sram_addr_in];
                 end
             end
             DATASPACE_MEM_SRAM_WRITE: begin
                 if (sram_addr_in < REG_MAX_ADDR) begin
-                    registers[sram_addr_in] <= registers[Rmemop];
+                    registers[sram_addr_in] <= sram_data_in;
                 end else if (sram_addr_in < MMIO_MAX_ADDR) begin
-                    mmio[sram_addr_in - REG_MAX_ADDR] <= registers[Rmemop];
+                    mmio[sram_addr_in - REG_MAX_ADDR] <= sram_data_in;
                 end else begin
-                    sram[sram_addr_in] <= registers[Rmemop];
+                    sram[sram_addr_in] <= sram_data_in;
                 end
             end
         endcase

@@ -4,3 +4,5 @@ AVR-Mikroprocek.sim/sim_1
 AVR-Mikroprocek.ip_user_files/
 AVR-Mikroprocek.runs/
 AVR-Mikroprocek.srcs/utils_1
+../tb_cpu_behav1.wcfg
+tb_cpu_behav1.wcfg
