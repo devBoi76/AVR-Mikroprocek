@@ -53,7 +53,6 @@ module cpu(input clk,
     assign pc_plus_two = pc + 2;
 
     data_word_t r[31:0];
-    localparam int SRAM_MAX_ADDR = 'h3FF; // 1KB 'h1FFF; // 8KB
     localparam int IO_BASE = 16'h0020; //32
     data_word_t sram[SRAM_MAX_ADDR:0];
     assign sram[31:0] = r[31:0];
@@ -66,7 +65,10 @@ module cpu(input clk,
     data_word_t K;
     logic signed [11:0] big_K;
     addr_io_word_t A;
-    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A));
+
+    // sygnały kontrolne
+    ctrl_t ctrl;
+    decode decode (.inst(prog_data), .opcode(opcode), .Rd(Rd), .Rr(Rr), .K(K), .big_K(big_K), .A(A), .ctrl(ctrl));
 
     // przechowują dane potrzebne do wynokania operacji na pamięci w następnym cyklu
     memop_dir_e memop_dir;
@@ -84,8 +86,6 @@ module cpu(input clk,
     reg_addr_t alu_rd;
     opcode_e alu_opcode;
 
-    // sygnały kontrolne
-    ctrl_t ctrl = '{register_writeback_source:SOURCE_NONE};
 
     //Można dodać sygnał reset_flags do resetowania wszystkich flag
 
@@ -136,87 +136,74 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                     end
                     OP_ADC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                     end
                     OP_SUB: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_SBC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_AND: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_ANDI: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= K;
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_OR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_ORI: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= K;
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_EOR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_INC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_DEC: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_TST: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_CLR: begin
                         pc <= pc + 1;
                         alu_primary <= r[Rd];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_MUL: begin
                         pc <= pc + 1;
@@ -224,7 +211,6 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_MULS: begin
                         pc <= pc + 1;
@@ -232,7 +218,6 @@ module cpu(input clk,
                         alu_primary <= r[Rd];
                         alu_secondary <= r[Rr];
                         state <= S_EXECUTE;
-                        ctrl.register_writeback_source <= SOURCE_ALU;
                      end
                      OP_IN: begin
                         pc <= pc + 1;

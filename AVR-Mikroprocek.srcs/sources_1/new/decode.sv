@@ -1,22 +1,22 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
+// Company:
+// Engineer:
+//
 // Create Date: 03/14/2026 12:34:45 PM
-// Design Name: 
+// Design Name:
 // Module Name: decode
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+//
 //////////////////////////////////////////////////////////////////////////////////
 import cpu_defs::*;
 
@@ -27,9 +27,10 @@ module decode(
     output reg_addr_t Rr,
     output data_word_t K,
     output logic signed [11:0] big_K, // używane np. w RJMP, RCALl
-    output addr_io_word_t A
+    output addr_io_word_t A,
+    output ctrl_t ctrl
     );
-    
+
     always_comb begin
         // 'RTL ANALYSIS > Run Linter' narzekał że to nie logika kombinacyjna.
         // Ustawiamy 'dont-care' jako default
@@ -39,9 +40,10 @@ module decode(
         K      = 'x;
         big_K  = 'x;
         A      = 'x;
-        
+        ctrl = '{register_writeback_source:SOURCE_NONE};
+
         casez (inst.raw)
-            16'b1110????????????: begin 
+            16'b1110????????????: begin
                 opcode = OP_LDI;
                 Rd = {1'b1, inst.imm.d}; // r16-r31
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
@@ -66,44 +68,52 @@ module decode(
                 opcode = OP_ADD;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b000111??????????: begin
                 opcode = OP_ADC;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b000110??????????: begin
                 opcode = OP_SUB;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b000010??????????: begin
                 opcode = OP_SBC;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
-            16'b001000??????????: begin 
+            16'b001000??????????: begin
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
                 if(Rd == Rr)
                     opcode = OP_TST;
                 else
                     opcode = OP_AND;
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b0111????????????: begin
                 opcode = OP_ANDI;
                 Rd = {1'b1, inst.imm.d};
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b001010??????????: begin
                 opcode = OP_OR;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b0110????????????: begin
                 opcode = OP_ORI;
                 Rd = {1'b1, inst.imm.d};
                 K = {inst.imm.K_top_bits, inst.imm.K_btm_bits};
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b001001??????????: begin
                 opcode = OP_EOR;
@@ -113,30 +123,35 @@ module decode(
                     opcode = OP_CLR;
                 else
                     opcode = OP_EOR;
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b1001010?????0011: begin
                 opcode = OP_INC;
                 Rd = {inst.rr_rd.d};
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b1001010?????1010: begin
                 opcode = OP_DEC;
                 Rd = {inst.rr_rd.d};
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b100111??????????: begin
                 opcode = OP_MUL;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b00000010????????: begin
                 opcode = OP_MULS;
                 Rd = {1'b1, inst.raw[7:4]};
                 Rr = {1'b1, inst.raw[3:0]};
+                ctrl.register_writeback_source <= SOURCE_ALU;
             end
             16'b001011??????????: begin
                 opcode = OP_MOV;
                 Rd = inst.rr_rd.d;
                 Rr = {inst.rr_rd.r_top_bit, inst.rr_rd.r_btm_bits };
-            end            
+            end
             16'b10110???????????: begin
                 opcode = OP_IN;
                 Rd = inst.io.d;
@@ -167,5 +182,5 @@ module decode(
             end
         endcase
     end
-    
+
 endmodule

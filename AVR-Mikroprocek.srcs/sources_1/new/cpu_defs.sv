@@ -7,6 +7,8 @@ parameter int BITS_ADDR_IO = 6;
 parameter int BITS_DATA = 8;
 parameter int BITS_ADDR = 16;
 parameter int BITS_INST = 16;
+parameter int SRAM_MAX_ADDR = 'h3FF; // 1KB 'h1FFF; // 8KB
+
 
 // Definiujesz typ data_word_t (TYPY KOŃCZYMY _T JAKO ZWYCZAJ)
 // data_word_t == logic [BITS_DATA-1:0] czyli (BITS_DATA == 8) bitów
@@ -20,7 +22,7 @@ typedef logic [4:0] reg_addr_t;
 
 // two operands rd, rr, np. wykorzystana w ADD, MOV
 typedef struct packed {
-    logic [5:0] op; 
+    logic [5:0] op;
     logic r_top_bit;
     logic [4:0] d;
     logic [3:0] r_btm_bits;
@@ -38,7 +40,7 @@ typedef struct packed {
 typedef struct packed {
     logic [3:0] op; // 1011
     logic in_out; // 0 = IN, 1 = OUT
-    logic [1:0] A_top_bits; 
+    logic [1:0] A_top_bits;
     logic [4:0] d; // registers r0-r31
     logic [3:0] A_btm_bits;
 } inst_io_t;
@@ -73,7 +75,7 @@ typedef enum logic [1:0] {
     S_MEMOP
 } cpu_state_e;
 
-// Wewnętrzna reprezentacja poleceń. Nie ma znaczenia ile te wartości wynoszą. 
+// Wewnętrzna reprezentacja poleceń. Nie ma znaczenia ile te wartości wynoszą.
 typedef enum logic [7:0] {
     OP_LDI,
     OP_LDS,
@@ -123,7 +125,7 @@ typedef struct packed{
 typedef enum logic [1:0] {
     SOURCE_NONE,
     SOURCE_CPU,
-    SOURCE_ALU    
+    SOURCE_ALU
 }source_e;
 
 typedef struct packed {
@@ -132,4 +134,3 @@ typedef struct packed {
 
 
 endpackage : cpu_defs
-
